@@ -1,5 +1,5 @@
-import xml2js from " ";
-import { XMLParser, XMLValidator } from "fast-xml-parser";
+import xml2js from "xml2js";
+
 import {
   checkIfVoteExistInDB,
   getVoteId,

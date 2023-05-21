@@ -152,7 +152,7 @@ export const getVoteId = async (billId) => {
 export const retrieveVotesFromDB = async (voteId) => {
   return new Promise((resolve, reject) => {
     pool.query(
-      `SELECT bills.BillID, bills.BillLabel, knesset_members.FullName, vote_types.TypeValue
+      `SELECT bills.BillID, knesset_members.MemberID, vote_types.TypeID
       FROM bills
       INNER JOIN votes ON votes.VoteID = bills.VoteID
       INNER JOIN knesset_members ON knesset_members.MemberID = votes.KnessetMemberID
