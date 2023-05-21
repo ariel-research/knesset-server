@@ -1,4 +1,4 @@
-import xml2js from "xml2js";
+import xml2js from " ";
 import { XMLParser, XMLValidator } from "fast-xml-parser";
 import {
   checkIfVoteExistInDB,
@@ -219,7 +219,7 @@ export const getVotes = async (req, res) => {
           };
         });
         votesToInsert.push(...votes);
-        
+
         for (let vote of votesToInsert) {
           await insertVoteForBillRow(
             vote.voteId,
@@ -231,11 +231,15 @@ export const getVotes = async (req, res) => {
       }
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
-      votesToClient.push(...votesFromDB);
-    } 
-    
-    return res.status(200).json({ votesToClient });
+      if (voteIdFromDB) {
+        votesToClient.push(...votesFromDB);
+      }
+    }
+
+    return votesToClient;
   } catch (error) {
     return res.status(404).json({ error: error.message });
   }
 };
+
+export default getVotes;
