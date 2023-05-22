@@ -165,7 +165,7 @@ export const retrieveVotesFromDB = async (voteId) => {
         } else {
           const votes = res.map((row) => ({
             BillID: row.BillID,
-            KnessetMemberId: row.memberID,
+            KnessetMemberId: row.MemberID,
             TypeValue: row.TypeID,
           }));
           resolve(votes);
