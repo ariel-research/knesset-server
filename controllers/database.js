@@ -238,7 +238,7 @@ export const getVotes = async (req, res) => {
 
     return votesToClient;
   } catch (error) {
-    `return res.status(404).json({ error: error.message });`
+    return res.status(404).json({ error: error.message });
   }
 };
 
