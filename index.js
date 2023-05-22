@@ -6,6 +6,9 @@ import bodyParser from "body-parser";
 import generalRoutes from "./routes/general.js";
 import databaseRoutes from "./routes/database.js";
 import morgan from "morgan";
+import {getVotes} from "./controllers/database.js"
+import {findScoresToMembers} from "./Utils/localUtils.js"
+// const findScoresToMembers = require('../Utils/localUtils.js');
 
 dotenv.config();
 const app = express();
@@ -19,6 +22,60 @@ app.use(cors());
 
 app.use("/general", generalRoutes);
 app.use("/database", databaseRoutes);
+
+app.get('/', async(req, res) =>{
+  // req.bill_ids = '16633'; splits by ,
+  // req.user_votes = [true]; list of boolean user votes
+
+  const bill_ids_req = req.bill_ids; // '16633,16634'
+  const user_votes_req = req.user_votes; // [true, false]
+  console.log(req);
+
+  // let bill_ids = '16633';
+  // bill_ids = '16633';
+  // בעד - 1
+  // נגד - 2
+  // נמנע - 3
+  // לא הצביע - 4
+  
+  const re = {query: { billId: bill_ids_req }}
+  const votes = await getVotes(re, res);
+  
+  const map1 = parseVotes(votes); 
+  // console.log(map1);
+  const bill_ids = bill_ids_req.split(',');
+  // console.log("bill_ids", bill_ids)
+
+  // const res1 = findScoresToMembers(bill, [true], map1)
+  const res1 = findScoresToMembers(bill_ids, user_votes_req, map1)
+
+  // console.log("res of findScoresToMembers", res1)
+  res.send(res1).json;
+})
+
+
+const parseVotes = (votes) => {
+  const map1 = {};
+  votes.forEach(element => {
+    const billid = element.BillID;
+    const memberid = element.KnessetMemberId;
+    const voteVal = element.TypeValue;
+    if (billid in map1 === false){
+      const tmp = { member_id: memberid,
+                    vote: voteVal }
+      // tmp[memberid] = voteVal
+      map1[billid] = [tmp]
+    }else{
+      const tmp = { member_id: memberid,
+                    vote: voteVal }
+      // tmp[memberid] = voteVal
+      map1[billid].push(tmp)
+    }
+  });
+
+  return map1;
+}
+
 
 const port = 8080;
 app.listen(port, () => {

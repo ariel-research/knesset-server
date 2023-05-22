@@ -1,5 +1,6 @@
 import xml2js from "xml2js";
 
+import { XMLParser, XMLValidator } from "fast-xml-parser";
 import {
   checkIfVoteExistInDB,
   getVoteId,
