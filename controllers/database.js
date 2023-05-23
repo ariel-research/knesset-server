@@ -152,7 +152,7 @@ export const getBillVoteIds = async (req, res) => {
         }
         const toXmlParser = await response.text();
         if (!toXmlParser) {
-          console.log("XML PARSER PROBLEM");
+          console.error("XML PARSER PROBLEM");
         }
         const data = await xmlParser(toXmlParser);
         const entries = data["feed"]["entry"];
@@ -182,24 +182,26 @@ export const getBillVoteIds = async (req, res) => {
 // http://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved?$filter=sess_item_id%20eq%20565532%20 need to extract from here the vote_id by using the bill_id as sess_item_id
 
 // http://knesset.gov.il/Odata/Votes.svc/vote_rslts_kmmbr_shadow?$filter=vote_id%20eq%2031173 odata query to get who voted using vote_id
-export const getVotes = async (req, res) => {
+export const getVotes = async (req) => {
   try {
     const { billId } = req.query;
     const billIds = await billId.split(",");
     const votesToInsert = [];
     const votesToClient = [];
+    let votesFromDB = null;
 
     for (let id of billIds) {
       if (!id) continue;
-      console.log(id);
+      /**If the vote exists in bills table */
       const voteIdFromDB = await getVoteId(id);
+      /**If the vote exists in votes table */
       const voteExistsInDB = await checkIfVoteExistInDB(voteIdFromDB);
       /**Database checking before going to the knessetApi */
       if (voteExistsInDB) {
-        console.log("voteExistInDB = TRUE");
-        const votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
-        console.log(votesFromDB);
-        votesToClient.push(...votesFromDB);
+        // console.log("voteExistInDB = TRUE");
+        votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
+        // console.log(votesFromDB);
+
         /** Make an Api call to the knesset server */
       } else {
         console.log("voteExistsInDB: False");
@@ -229,9 +231,10 @@ export const getVotes = async (req, res) => {
             vote.voteValue
           );
         }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
       }
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
+
       if (voteIdFromDB) {
         votesToClient.push(...votesFromDB);
       }
@@ -239,8 +242,7 @@ export const getVotes = async (req, res) => {
 
     return votesToClient;
   } catch (error) {
-    return res.status(404).json({ error: error.message });
+    return { error: error.message };
   }
 };
-
 export default getVotes;

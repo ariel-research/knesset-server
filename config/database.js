@@ -1,18 +1,35 @@
 import pool from "../config/connect.js";
 
+/**
+ * A valid structure for bill label using regex for replacing multiple invalid characters.
+ * @param {*} valid
+ * @returns
+ */
 function validate(valid) {
   let newStr = valid.replace(/[\'\"]+/g, "");
   return newStr;
 }
 
+/**
+ * A valid structure for the mysql database.
+ * @param {*} publishDate
+ * @returns
+ */
+
 const validDate = (publishDate) => {
-  console.log(publishDate);
+  // console.log(publishDate);
   let valid =
     typeof publishDate === "string" ? publishDate.replace("T", " ") : "";
   return valid;
 };
 const SQL_CHECKING_QUERY = "SELECT COUNT(*) FROM";
 
+/**
+ * Insert a knesset member row with specific structure for the application needs into knesset_members table.
+ * @param {*} memberID
+ * @param {*} memberName
+ * @param {*} isActive
+ */
 export const insertKnessetMemberRow = async (
   memberID,
   memberName,
@@ -22,20 +39,20 @@ export const insertKnessetMemberRow = async (
     `${SQL_CHECKING_QUERY} knesset_members where MemberID = ${memberID}`,
     (err, result) => {
       if (err) throw err;
-      console.log(result[0]["COUNT(*)"] === 0);
+      // console.log(result[0]["COUNT(*)"] === 0);
       if (result[0]["COUNT(*)"] === 0) {
         memberName = validate(memberName);
         const sql = `INSERT INTO knesset_members(MemberID, FullName, IsActive) VALUES (${memberID}, '${memberName}', ${isActive})`;
         pool.query(sql, (err, result) => {
           if (err && err.code == "ER_DUP_ENTRY") {
-            console.log(`Id: ${memberID} already inserted to the db`);
+            // console.log(`Id: ${memberID} already inserted to the db`);
           } else if (err) {
             throw err;
           }
-          console.log("Succeed insert into knesset_members new knesset member");
+          // console.log("Succeed insert into knesset_members new knesset member");
         });
       } else {
-        console.log(`Id: ${memberID} already inserted to the db`);
+        // console.log(`Id: ${memberID} already inserted to the db`);
       }
     }
   );
@@ -74,7 +91,7 @@ export const insertBillRow = async (
             const sql = `INSERT INTO bills(BillID, BillLabel, KnessetNum) VALUES (${billID}, '${billNameValidator}', ${knessetNum})`;
             pool.query(sql, (err, result) => {
               if (err) {
-                console.log("Insert bill without date problem");
+                console.error(err.message);
                 throw err;
               }
             });
@@ -101,7 +118,7 @@ export const insertBillRow = async (
                 const updateResult = pool.query(updateQuery);
                 console.log(`Succeed update publish date for bill ${billID}`);
               } catch (err) {
-                console.log(
+                console.error(
                   `Failed to update publish date for bill ${billID}: ${err}`
                 );
               }
@@ -114,31 +131,37 @@ export const insertBillRow = async (
 };
 /**
  * Updating to the last vote of bill
- * @param {*} billId 
- * @param {*} voteId 
+ * @param {*} billId
+ * @param {*} voteId
  */
 export const updateVoteId = async (billId, voteId) => {
   try {
     const sql = `UPDATE bills SET VoteID = ${voteId} WHERE BillID = ${billId}`;
     pool.query(sql, (err, res) => {
       if (err) {
-        console.log(err);
+        console.error(err);
         throw err;
       } else {
         console.log(`Updated successfully vote_id to bill_id: ${billId}`);
       }
     });
   } catch (err) {
-    console.log(`Failed to update property vote_id in ${billId}`);
+    console.error(`Failed to update property vote_id in ${billId}`);
     throw err;
   }
 };
+
+/**
+ * If the voteID exists in the database this function will return the voteID as Number
+ * @param {*} billId
+ * @returns Number
+ */
 export const getVoteId = async (billId) => {
   return new Promise((resolve, reject) => {
     const sql = `SELECT VoteID FROM bills WHERE BillID = ${billId}`;
     pool.query(sql, (err, res) => {
       if (err) {
-        console.log(
+        console.error(
           `Failed in getVoteId function from config/database with Bill Id: ${billId}`
         );
         reject(err);
@@ -149,6 +172,13 @@ export const getVoteId = async (billId) => {
     });
   });
 };
+
+/**
+ * Function to retrieve votes using complex MySql query to connect between the table,
+ * and return the payload to the server.
+ * @param {*} voteId
+ * @returns
+ */
 export const retrieveVotesFromDB = async (voteId) => {
   return new Promise((resolve, reject) => {
     pool.query(
@@ -160,7 +190,7 @@ export const retrieveVotesFromDB = async (voteId) => {
       WHERE votes.VoteID = ${voteId};`,
       (err, res) => {
         if (err) {
-          console.log("checkIfVoteExistInDB Retrieve votes table error");
+          console.error("checkIfVoteExistInDB Retrieve votes table error");
           reject(err);
         } else {
           const votes = res.map((row) => ({
@@ -174,15 +204,19 @@ export const retrieveVotesFromDB = async (voteId) => {
     );
   });
 };
-
+/**
+ * Function that's check if voteID is exists on the votes table.
+ * @param {*} voteId
+ * @returns boolean
+ */
 export const checkIfVoteExistInDB = async (voteId) => {
   return new Promise((resolve, reject) => {
     pool.query(
       `${SQL_CHECKING_QUERY} votes WHERE VoteID = ${voteId}`,
       (err, res) => {
-        console.log(res)
+        // console.log(res);
         if (err) {
-          console.log(
+          console.error(
             `checkIfVoteExistInDB COUNT function error with id: ${voteId}`
           );
           reject(err);
@@ -196,7 +230,13 @@ export const checkIfVoteExistInDB = async (voteId) => {
     );
   });
 };
-
+/**
+ *
+ * @param {*} voteId
+ * @param {*} billID
+ * @param {*} memberID
+ * @param {*} voteValue
+ */
 export const insertVoteForBillRow = async (
   voteId,
   billID,
@@ -208,7 +248,7 @@ export const insertVoteForBillRow = async (
       `${SQL_CHECKING_QUERY} votes WHERE VoteID = ${voteId}`,
       (err, res) => {
         if (err) {
-          console.log("Error in insertVoteForBillRow function");
+          console.error("Error in insertVoteForBillRow function");
           throw err;
         }
         if (res[0]) {
@@ -216,7 +256,7 @@ export const insertVoteForBillRow = async (
             const sql = `INSERT INTO votes(VoteID, BillID, KnessetMemberID, VoteValue) VALUES (${voteId}, ${billID}, ${memberID}, ${voteValue})`;
             pool.query(sql, (err, res) => {
               if (err) {
-                console.log(
+                console.error(
                   `Got some error with insertion vote of ${memberID}`
                 );
                 throw err;
@@ -230,7 +270,7 @@ export const insertVoteForBillRow = async (
       }
     );
   } catch (err) {
-    console.log(err)
+    console.error(err);
     throw err;
   }
 };
