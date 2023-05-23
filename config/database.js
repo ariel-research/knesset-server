@@ -172,7 +172,20 @@ export const getVoteId = async (billId) => {
     });
   });
 };
-
+export const getKnessetNumberAmount = async () => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `SELECT KnessetNum FROM knesset.bills GROUP BY KnessetNum ORDER BY KnessetNum`,
+      (err, res) => {
+        if (err) {
+          console.error(err);
+          reject(err);
+        }
+        resolve(res);
+      }
+    );
+  });
+};
 /**
  * Function to retrieve votes using complex MySql query to connect between the table,
  * and return the payload to the server.

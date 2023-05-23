@@ -4,7 +4,7 @@ import parseVotes from "../../index.js";
 import pool from "../../config/connect";
 
 /**
- *
+ * The validation check if there is duplicated knessetMemberID with vote on the same bill.
  * @param {*} votes
  */
 const validation = async (votes) => {
@@ -21,6 +21,9 @@ const validation = async (votes) => {
   }
   return true;
 };
+/**
+ * getVotes Function testing
+ */
 describe("getVotes() testing", () => {
   test("No duplicates in one vote object", async () => {
     const billIds = "16633";

@@ -1,6 +1,4 @@
 import xml2js from "xml2js";
-
-import { XMLParser, XMLValidator } from "fast-xml-parser";
 import {
   checkIfVoteExistInDB,
   getVoteId,
@@ -85,7 +83,7 @@ export const getBillsByKnessetNum = async (req, res) => {
   return res.status(200).json({ success: true });
 };
 
-export const getKnessetMembers = async (req, res) => {
+export const getKnessetMembers = async (res) => {
   let skip = 0;
   const pageSize = 100;
   let hasMoreData = true;
@@ -204,7 +202,6 @@ export const getVotes = async (req) => {
 
         /** Make an Api call to the knesset server */
       } else {
-        console.log("voteExistsInDB: False");
         const url = `http://knesset.gov.il/Odata/Votes.svc/vote_rslts_kmmbr_shadow?$filter=vote_id%20eq%20${voteIdFromDB}`;
         const response = await fetch(url);
         const toXmlParser = await response.text();

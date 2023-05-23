@@ -1,4 +1,5 @@
 import pool from "../config/connect.js";
+import { getKnessetNumberAmount } from "../config/database.js";
 
 export const getBillsData = async (req, res) => {
   try {
@@ -40,6 +41,14 @@ export const getBillsByKnessetNum = (req, res) => {
         return res.status(200).json({ bills, total });
       }
     );
+  } catch (error) {
+    return res.status(404).json(error);
+  }
+};
+export const getKnessetNumbers = async (req, res) => {
+  try {
+    const answer = await getKnessetNumberAmount();
+    return res.status(200).json(answer);
   } catch (error) {
     return res.status(404).json(error);
   }
