@@ -287,3 +287,27 @@ export const insertVoteForBillRow = async (
     throw err;
   }
 };
+export const getBillsFromDatabase = () => {
+  return new Promise((resolve, reject) => {
+    try {
+      pool.query(
+        "SELECT * FROM knesset.bills WHERE VoteID",
+        (error, results) => {
+          if (error) reject(error);
+
+          // Transform the results into an array
+          const data = results.map((row) => ({
+            id: row.BillID,
+            label: row.BillLabel,
+            knessetNum: row.KnessetNum,
+          }));
+
+          // Return the data as a JSON array
+          resolve(data);
+        }
+      );
+    } catch (error) {
+      reject({ error: error.message });
+    }
+  });
+};

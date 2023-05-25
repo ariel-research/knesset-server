@@ -6,7 +6,7 @@ import bodyParser from "body-parser";
 import generalRoutes from "./routes/general.js";
 import databaseRoutes from "./routes/database.js";
 import morgan from "morgan";
-import { getVotes } from "./controllers/database.js";
+import { getVotes } from "./controllers/general.js";
 import { findScoresToMembers } from "./Utils/tests/localUtils.js";
 // const findScoresToMembers = require('../Utils/localUtils.js');
 
@@ -41,7 +41,7 @@ app.get("/", async (req, res) => {
   const re = { query: { billId: bill_ids_req } };
   const votes = await getVotes(re);
 
-  const map1 = parseVotes(votes);
+  const map1 = await parseVotes(votes);
   // console.log(map1);
   const bill_ids = bill_ids_req.split(",");
   // console.log("bill_ids", bill_ids)
@@ -56,7 +56,7 @@ app.get("/", async (req, res) => {
 export const parseVotes = async (votes) => {
   const map1 = {};
   const awaitedVotes = await votes;
-  console.log(awaitedVotes);
+
   awaitedVotes.forEach((element) => {
     const billid = element.BillID;
     const memberid = element.KnessetMemberId;
