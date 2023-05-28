@@ -78,9 +78,9 @@ export const getVotes = async (req) => {
     let votesFromDB = null;
 
     for (let id of billIds) {
-      if (!id) continue;
       /**If the vote exists in bills table */
       const voteIdFromDB = await getVoteId(id);
+
       /**If the vote exists in votes table */
       const voteExistsInDB = await checkIfVoteExistInDB(voteIdFromDB);
 
@@ -88,6 +88,8 @@ export const getVotes = async (req) => {
       if (voteExistsInDB) {
         // console.log("voteExistInDB = TRUE");
         votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
+
+        votesToClient.push(...votesFromDB);
         // console.log(votesFromDB);
 
         /** Make an Api call to the knesset server */

@@ -29,13 +29,12 @@ app.get("/bills", async (req, res) => {
   const bills = await getBillsData();
   res.status(202).json(bills);
 });
-app.get("/", async (req, res) => {
-  req.bill_ids = "16633"; //splits by ,
-  req.user_votes = [true]; //list of boolean user votes
+app.get("/scores", async (req, res) => {
+  req.bill_ids = "16633,16634"; //splits by ,
+  req.user_votes = [true, false]; //list of boolean user votes
 
   const bill_ids_req = req.bill_ids; // '16633,16634'
   const user_votes_req = req.user_votes; // [true, false]
-  console.log(req);
 
   // let bill_ids = '16633';
   // bill_ids = '16633';
@@ -45,18 +44,19 @@ app.get("/", async (req, res) => {
   // לא הצביע - 4
 
   const re = { query: { billId: bill_ids_req } };
+
   const votes = await getVotes(re);
 
-  // const map1 = await parseVotes(votes);
-  // // console.log(map1);
-  // const bill_ids = bill_ids_req.split(",");
-  // // console.log("bill_ids", bill_ids)
-
-  // // const res1 = findScoresToMembers(bill, [true], map1)
-  // const res1 = findScoresToMembers(bill_ids, user_votes_req, map1);
-
-  // // console.log("res of findScoresToMembers", res1)
-  res.send(votes).json;
+  const map1 = await parseVotes(votes);
+  console.log(map1);
+  const bill_ids = bill_ids_req.split(",");
+  // console.log("bill_ids", bill_ids)
+  console.log(`${bill_ids}, ${user_votes_req}`);
+  // const res1 = findScoresToMembers(bill, [true], map1)
+  const res1 = findScoresToMembers(bill_ids, user_votes_req, map1);
+  console.log(res1);
+  // console.log("res of findScoresToMembers", res1)
+  res.send(res1);
 });
 
 export const parseVotes = async (votes) => {
@@ -81,16 +81,16 @@ export const parseVotes = async (votes) => {
   return map1;
 };
 
-// const port = 8080;
-// app.listen(port, () => {
-//   console.log(`server is listening http://localhost:${port}`);
-// });
+const port = 8080;
+app.listen(port, () => {
+  console.log(`server is listening http://localhost:${port}`);
+});
 /**
  * for deployment
  */
-const port = 8080;
-app.listen(port, "0.0.0.0", () => {
-  console.log(`server is listening  on 8080 port`);
-});
+// const port = 8080;
+// app.listen(port, "0.0.0.0", () => {
+//   console.log(`server is listening  on 8080 port`);
+// });
 
 export default parseVotes;
