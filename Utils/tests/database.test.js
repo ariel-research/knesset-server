@@ -1,6 +1,7 @@
 import "jest";
-import { getVotes, getBillsData } from "../../controllers/general.js";
+import { getVotes } from "../../controllers/general.js";
 import parseVotes from "../../index.js";
+import { getBillsFromDatabase } from "../../config/database.js";
 
 const validateRightStructureForBills = async (data) => {
   const awaitedData = await data;
@@ -13,8 +14,8 @@ const validateRightStructureForBills = async (data) => {
 };
 
 const validateRightStructureForVotes = async (data) => {
-  const awaitedData = await data;
-  awaitedData.forEach((element) => {
+  const votesToClient = await data;
+  votesToClient.forEach((element) => {
     if (
       !element.voteID ||
       !element.BillID ||
@@ -27,19 +28,6 @@ const validateRightStructureForVotes = async (data) => {
   return true;
 };
 
-// import pool from "../../config/connect";
-describe("getBillsData() testing", () => {
-  test("check if the return object in the right structure", async () => {
-    const data = await getBillsData();
-    const resVal = await validateRightStructureForBills(data);
-    expect(resVal).toBe(true);
-  });
-});
-
-/**
- * The validation check if there is duplicated knessetMemberID with vote on the same bill.
- * @param {*} votes
- */
 const validation = async (votes) => {
   const mappedVotes = await parseVotes(votes);
   for (const billId in mappedVotes) {
@@ -54,6 +42,19 @@ const validation = async (votes) => {
   }
   return true;
 };
+// import pool from "../../config/connect";
+describe("getBillsData() testing", () => {
+  test("check if the return object in the right structure", async () => {
+    const data = await getBillsFromDatabase();
+    const resVal = await validateRightStructureForBills(data);
+    expect(resVal).toBe(true);
+  });
+});
+
+/**
+ * The validation check if there is duplicated knessetMemberID with vote on the same bill.
+ * @param {*} votes
+ */
 
 describe("validation() tests", () => {
   test("validation check duplicated votes on the same bill is forbidden", async () => {
@@ -75,31 +76,46 @@ describe("validation() tests", () => {
  * getVotes Function testing
  */
 describe("getVotes() testing", () => {
-  test("check if the return object in the right structure", async () => {
-    const billIds = "16633";
-    const query = { query: { billId: billIds } };
-    const data = await getVotes(query);
-    const resVal = await validateRightStructureForVotes(data);
+  test("check if the return votesToClient object in the right structure", async () => {
+    const billData =
+      '[{"billId":17660,"opinionValue":1},{"billId":17799,"opinionValue":-1}]';
+    const query = { query: { billData: billData } };
+    const { votesToClient } = await getVotes(query);
+    // console.log(votes);
+    const resVal = await validateRightStructureForVotes(votesToClient);
     expect(resVal).toBe(true);
   });
 
   test("No duplicates in one vote object", async () => {
-    const billIds = "16633";
-    const query = { query: { billId: billIds } };
-    const votes = await getVotes(query);
-    const result = await validation(votes);
+    const billData = '[{"billId":17660,"opinionValue":1}]';
+    const query = { query: { billData: billData } };
+    const { votesToClient } = await getVotes(query);
+    const result = await validation(votesToClient);
     expect(result).toBe(true);
   });
-  test("No duplicates in multiple votes object", async () => {
-    const billIds = "16633,541525,412757";
-    const query = { query: { billId: billIds } };
-    const result = await validation(await getVotes(query));
-    expect(result).toBe(true);
-  }, 15000);
+
+  test("duplicates in multiple votes object", async () => {
+    const billData =
+      '[{"billId":17660,"opinionValue":1},{"billId":17799,"opinionValue":-1},{"billId":16127,"opinionValue":-1}]';
+    const query = { query: { billData: billData } };
+    const { votesToClient, _ } = await getVotes(query);
+    const resVal = await validation(votesToClient);
+    expect(resVal).toBe(true);
+  }, 10000);
+
+  test("duplicates in multiple votes object", async () => {
+    const billData =
+      '[{"billId":17660,"opinionValue":1},{"billId":17799,"opinionValue":-1},{"billId":16127,"opinionValue":-1}]';
+    const query = { query: { billData: billData } };
+    const { votesToClient, _ } = await getVotes(query);
+    const resVal = await validation(votesToClient);
+    expect(resVal).toBe(true);
+  }, 10000);
+
   test("Empty input check", async () => {
     const billIds = "";
-    const query = { query: { billId: billIds } };
-    const result = await validation(await getVotes(query));
-    expect(result).toBe(true);
+    const query = { query: { billData: billIds } };
+    const { votesToClient, _ } = await getVotes(query);
+    expect(votesToClient).toBe(undefined);
   });
 });

@@ -1,7 +1,7 @@
 import xml2js from "xml2js";
 import {
   insertBillRow,
-  insertKnessetMemberRow, 
+  insertKnessetMemberRow,
   updateVoteId,
 } from "../config/database.js";
 
@@ -142,7 +142,7 @@ export const getBillVoteIds = async (req, res) => {
         const url = `https://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved?$filter=knesset_num%20eq%20${knessetNum}&$skip=${skip}&$top=${top}`;
         const response = await fetch(url);
         if (!response) {
-          console.log("Response PROBLEM");
+          console.error("Response PROBLEM");
         }
         const toXmlParser = await response.text();
         if (!toXmlParser) {
