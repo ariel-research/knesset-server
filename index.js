@@ -6,7 +6,7 @@ import bodyParser from "body-parser";
 import generalRoutes from "./routes/general.js";
 import databaseRoutes from "./routes/database.js";
 import morgan from "morgan";
-import { getVotes } from "./controllers/database.js";
+import { getVotes } from "./controllers/general.js";
 import { findScoresToMembers } from "./Utils/tests/localUtils.js";
 // const findScoresToMembers = require('../Utils/localUtils.js');
 
