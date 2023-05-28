@@ -1,5 +1,27 @@
 import pool from "../config/connect.js";
 
+<<<<<<< HEAD
+=======
+const validate = (billUserOpinion) => {
+  const possibleValue = [1, -1];
+  const billIds = billUserOpinion.map((element) => {
+    element.billId;
+  });
+  const userOpinions = billUserOpinion.map((element) => {
+    element.opinionValue;
+  });
+  booleanMapIds = {};
+  booleanOpinionsId = {};
+  for (let id of billIds) {
+    if (booleanMapIds[id] === true) return false;
+    else booleanMapIds[id] === true;
+  }
+  for (let opinion of userOpinions ) {
+    if (!possibleValue.includes(opinion)) return false;
+  }
+  return true;
+};
+>>>>>>> parent of 117251a (changes for raphel the client boss)
 export const getBillsData = async (req, res) => {
   try {
     pool.query(
