@@ -11,7 +11,9 @@ const router = express.Router();
 router
   .get("/bills", getBillsData)
   .get("/billsByKnessetNum", getBillsByKnessetNum)
-  .get("/knessetAmounts", getKnessetNumbers)
   .get("/votes", getVotes);
+  .get("/knessetAmounts", getKnessetNumbers)
+
+
 
 export default router;

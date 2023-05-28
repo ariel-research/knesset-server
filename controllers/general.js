@@ -47,7 +47,9 @@ export const getBillsByKnessetNum = (req, res) => {
           return res.status(404).json({ error: error.message });
         }
 
+
         const bills = results.map((row) => ({
+
           name: row.BillLabel,
           id: row.BillID,
         }));
@@ -68,14 +70,12 @@ export const getKnessetNumbers = async (req, res) => {
   }
 };
 
+
 export const getVotes = async (req) => {
   try {
-    const { billData } = req.query;
-    const billUserOpinion = JSON.parse(billData);
-    if (!billUserOpinion && !validate(billUserOpinion)) {
-    }
-    const billIds = billUserOpinion.map((element) => element.billId);
-    // const billIds = await billId.split(",");
+    const { billId } = req.query;
+    const billIds = await billId.split(",");
+
     const votesToInsert = [];
     const votesToClient = [];
     let votesFromDB = null;
@@ -92,8 +92,11 @@ export const getVotes = async (req) => {
         // console.log("voteExistInDB = TRUE");
         votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
         // console.log(votesFromDB);
+
+
         /** Make an Api call to the knesset server */
       } else {
+        console.log("voteExistsInDB: False");
         const url = `http://knesset.gov.il/Odata/Votes.svc/vote_rslts_kmmbr_shadow?$filter=vote_id%20eq%20${voteIdFromDB}`;
         const response = await fetch(url);
         const toXmlParser = await response.text();
@@ -120,18 +123,18 @@ export const getVotes = async (req) => {
             vote.voteValue
           );
         }
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
       }
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
+
       if (voteIdFromDB) {
         votesToClient.push(...votesFromDB);
-        // console.log(votesToClient);
       }
     }
-    // console.log(votesToClient);
-    const votesAndParsed = { votesToClient, billUserOpinion };
 
-    return votesAndParsed;
+    return votesToClient;
+
   } catch (error) {
     return { error: error.message };
   }
