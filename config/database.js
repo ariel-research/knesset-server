@@ -172,7 +172,20 @@ export const getVoteId = async (billId) => {
     });
   });
 };
-
+export const getKnessetNumberAmount = async () => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `SELECT KnessetNum FROM knesset.bills GROUP BY KnessetNum ORDER BY KnessetNum`,
+      (err, res) => {
+        if (err) {
+          console.error(err);
+          reject(err);
+        }
+        resolve(res);
+      }
+    );
+  });
+};
 /**
  * Function to retrieve votes using complex MySql query to connect between the table,
  * and return the payload to the server.
@@ -273,4 +286,28 @@ export const insertVoteForBillRow = async (
     console.error(err);
     throw err;
   }
+};
+export const getBillsFromDatabase = () => {
+  return new Promise((resolve, reject) => {
+    try {
+      pool.query(
+        "SELECT * FROM knesset.bills WHERE VoteID",
+        (error, results) => {
+          if (error) reject(error);
+
+          // Transform the results into an array
+          const data = results.map((row) => ({
+            id: row.BillID,
+            label: row.BillLabel,
+            knessetNum: row.KnessetNum,
+          }));
+
+          // Return the data as a JSON array
+          resolve(data);
+        }
+      );
+    } catch (error) {
+      reject({ error: error.message });
+    }
+  });
 };

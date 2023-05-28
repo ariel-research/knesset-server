@@ -1,13 +1,7 @@
 import xml2js from "xml2js";
-
-import { XMLParser, XMLValidator } from "fast-xml-parser";
 import {
-  checkIfVoteExistInDB,
-  getVoteId,
   insertBillRow,
   insertKnessetMemberRow,
-  insertVoteForBillRow,
-  retrieveVotesFromDB,
   updateVoteId,
 } from "../config/database.js";
 
@@ -85,7 +79,7 @@ export const getBillsByKnessetNum = async (req, res) => {
   return res.status(200).json({ success: true });
 };
 
-export const getKnessetMembers = async (req, res) => {
+export const getKnessetMembers = async (res) => {
   let skip = 0;
   const pageSize = 100;
   let hasMoreData = true;
@@ -148,7 +142,7 @@ export const getBillVoteIds = async (req, res) => {
         const url = `https://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved?$filter=knesset_num%20eq%20${knessetNum}&$skip=${skip}&$top=${top}`;
         const response = await fetch(url);
         if (!response) {
-          console.log("Response PROBLEM");
+          console.error("Response PROBLEM");
         }
         const toXmlParser = await response.text();
         if (!toXmlParser) {
@@ -178,8 +172,4 @@ export const getBillVoteIds = async (req, res) => {
     return res.status(404).json({ error: error.message });
   }
 };
-
-// http://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved?$filter=sess_item_id%20eq%20565532%20 need to extract from here the vote_id by using the bill_id as sess_item_id
-
-// http://knesset.gov.il/Odata/Votes.svc/vote_rslts_kmmbr_shadow?$filter=vote_id%20eq%2031173 odata query to get who voted using vote_id
 

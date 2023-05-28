@@ -6,7 +6,9 @@ import bodyParser from "body-parser";
 import generalRoutes from "./routes/general.js";
 import databaseRoutes from "./routes/database.js";
 import morgan from "morgan";
-import { getVotes } from "./controllers/general.js";
+
+import { getVotes, getBillsData } from "./controllers/general.js";
+
 import { findScoresToMembers } from "./Utils/tests/localUtils.js";
 // const findScoresToMembers = require('../Utils/localUtils.js');
 
@@ -23,6 +25,10 @@ app.use(cors());
 app.use("/general", generalRoutes);
 app.use("/database", databaseRoutes);
 
+app.get("/bills", async (req, res) => {
+  const bills = await getBillsData();
+  res.status(202).json(bills);
+});
 app.get("/", async (req, res) => {
   req.bill_ids = "16633"; //splits by ,
   req.user_votes = [true]; //list of boolean user votes
@@ -41,22 +47,22 @@ app.get("/", async (req, res) => {
   const re = { query: { billId: bill_ids_req } };
   const votes = await getVotes(re);
 
-  const map1 = parseVotes(votes);
-  // console.log(map1);
-  const bill_ids = bill_ids_req.split(",");
-  // console.log("bill_ids", bill_ids)
+  // const map1 = await parseVotes(votes);
+  // // console.log(map1);
+  // const bill_ids = bill_ids_req.split(",");
+  // // console.log("bill_ids", bill_ids)
 
-  // const res1 = findScoresToMembers(bill, [true], map1)
-  const res1 = findScoresToMembers(bill_ids, user_votes_req, map1);
+  // // const res1 = findScoresToMembers(bill, [true], map1)
+  // const res1 = findScoresToMembers(bill_ids, user_votes_req, map1);
 
-  // console.log("res of findScoresToMembers", res1)
-  res.send(res1).json;
+  // // console.log("res of findScoresToMembers", res1)
+  res.send(votes).json;
 });
 
 export const parseVotes = async (votes) => {
   const map1 = {};
   const awaitedVotes = await votes;
-  console.log(awaitedVotes);
+
   awaitedVotes.forEach((element) => {
     const billid = element.BillID;
     const memberid = element.KnessetMemberId;
@@ -75,8 +81,16 @@ export const parseVotes = async (votes) => {
   return map1;
 };
 
+// const port = 8080;
+// app.listen(port, () => {
+//   console.log(`server is listening http://localhost:${port}`);
+// });
+/**
+ * for deployment
+ */
 const port = 8080;
-app.listen(port, () => {
-  console.log(`server is listening http://localhost:${port}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`server is listening  on 8080 port`);
 });
+
 export default parseVotes;
