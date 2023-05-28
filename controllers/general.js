@@ -47,9 +47,7 @@ export const getBillsByKnessetNum = (req, res) => {
           return res.status(404).json({ error: error.message });
         }
 
-
         const bills = results.map((row) => ({
-
           name: row.BillLabel,
           id: row.BillID,
         }));
@@ -69,7 +67,6 @@ export const getKnessetNumbers = async (req, res) => {
     return res.status(404).json(error);
   }
 };
-
 
 export const getVotes = async (req) => {
   try {
@@ -92,7 +89,6 @@ export const getVotes = async (req) => {
         // console.log("voteExistInDB = TRUE");
         votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
         // console.log(votesFromDB);
-
 
         /** Make an Api call to the knesset server */
       } else {
@@ -126,15 +122,13 @@ export const getVotes = async (req) => {
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
         votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
-      }
-
-      if (voteIdFromDB) {
-        votesToClient.push(...votesFromDB);
+        if (voteIdFromDB) {
+          votesToClient.push(...votesFromDB);
+        }
       }
     }
 
     return votesToClient;
-
   } catch (error) {
     return { error: error.message };
   }
