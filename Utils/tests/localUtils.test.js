@@ -1,4 +1,4 @@
-import findScoresToMembers from "../Utils/tests/localUtils.js";
+import findScoresToMembers from "../localUtils.js";
 // const {findScoresToMembers} = require('../localUtils');
 // import {findScoresToMembers} from "../Utils/localUtils.js"
 

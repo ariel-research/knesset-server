@@ -9,7 +9,7 @@ import morgan from "morgan";
 
 import { getVotes, getBillsData } from "./controllers/general.js";
 
-import { findScoresToMembers } from "./Utils/tests/localUtils.js";
+import { findScoresToMembers } from "./Utils/localUtils.js";
 // const findScoresToMembers = require('../Utils/localUtils.js');
 
 dotenv.config();
