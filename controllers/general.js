@@ -23,7 +23,7 @@ const validate = (billUserOpinion) => {
     if (booleanMapIds[id] === true) return false;
     else booleanMapIds[id] === true;
   }
-  for (let opinion of userOpinions ) {
+  for (let opinion of userOpinions) {
     if (!possibleValue.includes(opinion)) return false;
   }
   return true;
@@ -38,21 +38,20 @@ export const getBillsData = async (req, res) => {
 };
 export const getBillsByKnessetNum = (req, res) => {
   try {
-    const { page = 1, pageSize = 20, knessetNum = 1 } = req.query;
+    const { knessetNum = 1 } = req.query;
     pool.query(
-      `SELECT COUNT(*) AS count FROM knesset.bills WHERE VoteID AND KnessetNum = ?;
-       SELECT * FROM knesset.bills WHERE VoteID AND KnessetNum = ? LIMIT ? OFFSET ?`,
-      [knessetNum, knessetNum, parseInt(pageSize), page * pageSize],
+      `SELECT * FROM knesset.bills WHERE VoteID AND KnessetNum = ?`,
+      [knessetNum],
       function (error, results, fields) {
         if (error) {
           return res.status(404).json({ error: error.message });
         }
-        const total = results[0][0].count;
-        const bills = results[1].map((row) => ({
+
+        const bills = results.map((row) => ({
           name: row.BillLabel,
           id: row.BillID,
         }));
-        return res.status(200).json({ bills, total });
+        return res.status(200).json({ bills });
       }
     );
   } catch (error) {
