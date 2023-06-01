@@ -29,9 +29,13 @@ app.get("/bills", async (req, res) => {
   const bills = await getBillsData();
   res.status(202).json(bills);
 });
+// app.get("/getVotes", async (req, res) => {
+//   const votes = await getVotes({ query: { billId: "16633,16634" } });
+//   res.status(200).json({ data: votes });
+// });
 app.get("/scores", async (req, res) => {
   req.bill_ids = "16633,16634"; //splits by ,
-  req.user_votes = [true, false]; //list of boolean user votes
+  req.user_votes = [true, false]; //list of) boolean user votes
 
   const bill_ids_req = req.bill_ids; // '16633,16634'
   const user_votes_req = req.user_votes; // [true, false]

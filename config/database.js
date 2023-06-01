@@ -195,7 +195,7 @@ export const getKnessetNumberAmount = async () => {
 export const retrieveVotesFromDB = async (voteId) => {
   return new Promise((resolve, reject) => {
     pool.query(
-      `SELECT bills.BillID, knesset_members.MemberID, vote_types.TypeID
+      `SELECT bills.BillID, bills.BillLabel, knesset_members.MemberID, knesset_members.FullName, vote_types.TypeID
       FROM bills
       INNER JOIN votes ON votes.VoteID = bills.VoteID
       INNER JOIN knesset_members ON knesset_members.MemberID = votes.KnessetMemberID
@@ -208,7 +208,9 @@ export const retrieveVotesFromDB = async (voteId) => {
         } else {
           const votes = res.map((row) => ({
             BillID: row.BillID,
+            BillLabel: row.BillLabel,
             KnessetMemberId: row.MemberID,
+            KnessetMemberName: row.FullName,
             TypeValue: row.TypeID,
           }));
           resolve(votes);
@@ -311,3 +313,4 @@ export const getBillsFromDatabase = () => {
     }
   });
 };
+const getBillId = () => {};
