@@ -43,8 +43,6 @@ const fetchBills = async (res, skip, knessetNum) => {
             : entry["content"][0]["m:properties"][0]["d:Name"][0]["_"],
         knessetNum:
           entry["content"][0]["m:properties"][0]["d:KnessetNum"][0]["_"],
-        publishDate:
-          entry["content"][0]["m:properties"][0]["d:PublicationDate"][0]["_"],
       };
     });
 
@@ -66,7 +64,7 @@ const fetchBills = async (res, skip, knessetNum) => {
 };
 
 export const getBillsByKnessetNum = async (req, res) => {
-  let knessetNum = 25;
+  let knessetNum = 1;
   while (knessetNum <= 25) {
     await fetchBills(res, 0, knessetNum);
     knessetNum++;
@@ -77,7 +75,7 @@ export const getBillsByKnessetNum = async (req, res) => {
   // }
 
   return res.status(200).json({ success: true });
-}; 
+};
 
 export const getKnessetMembers = async (res) => {
   let skip = 0;
@@ -172,8 +170,7 @@ export const getBillVoteIds = async (req, res) => {
     return res.status(404).json({ error: error.message });
   }
 };
-export const getBillLabelsByIds = async(billIds) => {
-  for (let id of billIds){
-    
+export const getBillLabelsByIds = async (billIds) => {
+  for (let id of billIds) {
   }
-}
+};

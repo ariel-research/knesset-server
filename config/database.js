@@ -77,17 +77,6 @@ export const insertBillRow = async (
       if (result[0]) {
         if (result[0]["COUNT(*)"] === 0) {
           const billNameValidator = validate(billName);
-          const publishDateValidator = validDate(publishDate);
-          if (publishDateValidator !== "") {
-            const sql = `INSERT INTO bills(BillID, BillLabel, KnessetNum, PublishDate) VALUES (${billID}, '${billNameValidator}', ${knessetNum},${publishDateValidator})`;
-            pool.query(sql, (err, result) => {
-              if (err) {
-                console.log("Insert bill with date problem");
-                throw err;
-              }
-              // console.log(`Inserted Row with ID: ${billID}`);
-            });
-          } else {
             const sql = `INSERT INTO bills(BillID, BillLabel, KnessetNum) VALUES (${billID}, '${billNameValidator}', ${knessetNum})`;
             pool.query(sql, (err, result) => {
               if (err) {
@@ -95,7 +84,6 @@ export const insertBillRow = async (
                 throw err;
               }
             });
-          }
         } else {
           if (result.find((item) => item.name === billName)) {
             const valid = billNameValidator(item.name);
