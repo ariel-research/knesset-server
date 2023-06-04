@@ -62,7 +62,12 @@ const fetchBills = async (res, skip, knessetNum) => {
     return res.status(404).json({ err: err.message + `${skip}` });
   }
 };
-
+/**
+ * Insert into the sql schemes all of the bills by iterate over all the knesset values.
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 export const getBillsByKnessetNum = async (req, res) => {
   let knessetNum = 1;
   while (knessetNum <= 25) {
@@ -76,7 +81,11 @@ export const getBillsByKnessetNum = async (req, res) => {
 
   return res.status(200).json({ success: true });
 };
-
+/**
+ * Insert all the knesset members after go to the api of the knesset.
+ * @param {*} res
+ * @returns
+ */
 export const getKnessetMembers = async (res) => {
   let skip = 0;
   const pageSize = 100;
@@ -128,6 +137,12 @@ export const getKnessetMembers = async (res) => {
   }
   return res.status(200).json({ result: "succeed" });
 };
+/**
+ * Insert to bills table all bills that's vote id is existing.
+ * @param {} req
+ * @param {*} res
+ * @returns
+ */
 export const getBillVoteIds = async (req, res) => {
   let knessetNum = 1;
   let skip = 0;
@@ -168,9 +183,5 @@ export const getBillVoteIds = async (req, res) => {
   } catch (error) {
     console.log(skip);
     return res.status(404).json({ error: error.message });
-  }
-};
-export const getBillLabelsByIds = async (billIds) => {
-  for (let id of billIds) {
   }
 };

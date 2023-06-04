@@ -9,25 +9,25 @@ import {
 } from "../config/database.js";
 import { xmlParser } from "./database.js";
 
-const validate = (billUserOpinion) => {
-  const possibleValue = [1, -1];
-  const billIds = billUserOpinion.map((element) => {
-    element.billId;
-  });
-  const userOpinions = billUserOpinion.map((element) => {
-    element.opinionValue;
-  });
-  booleanMapIds = {};
-  booleanOpinionsId = {};
-  for (let id of billIds) {
-    if (booleanMapIds[id] === true) return false;
-    else booleanMapIds[id] === true;
-  }
-  for (let opinion of userOpinions) {
-    if (!possibleValue.includes(opinion)) return false;
-  }
-  return true;
-};
+// const validate = (billUserOpinion) => {
+//   const possibleValue = [1, -1];
+//   const billIds = billUserOpinion.map((element) => {
+//     element.billId;
+//   });
+//   const userOpinions = billUserOpinion.map((element) => {
+//     element.opinionValue;
+//   });
+//   booleanMapIds = {};
+//   booleanOpinionsId = {};
+//   for (let id of billIds) {
+//     if (booleanMapIds[id] === true) return false;
+//     else booleanMapIds[id] === true;
+//   }
+//   for (let opinion of userOpinions) {
+//     if (!possibleValue.includes(opinion)) return false;
+//   }
+//   return true;
+// };
 export const getBillsData = async (req, res) => {
   try {
     const bills = await getBillsFromDatabase();
@@ -67,17 +67,22 @@ export const getKnessetNumbers = async (req, res) => {
     return res.status(404).json(error);
   }
 };
-
+const billIdsWithoutDuplicates = async (billIds) => {
+  return [...new Set(billIds)];
+};
 export const getVotes = async (req) => {
   try {
     const { billId } = req.query;
-    const billIds = await billId.split(",");
-
+    if (!billId || billId === "") {
+      return null;
+    }
+    const billIds = billId.split(",");
+    const setOfBillIds = await billIdsWithoutDuplicates(billIds);
     const votesToInsert = [];
     const votesToClient = [];
     let votesFromDB = null;
 
-    for (let id of billIds) {
+    for (let id of setOfBillIds) {
       /**If the vote exists in bills table */
       const voteIdFromDB = await getVoteId(id);
 
