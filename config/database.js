@@ -77,13 +77,13 @@ export const insertBillRow = async (
       if (result[0]) {
         if (result[0]["COUNT(*)"] === 0) {
           const billNameValidator = validate(billName);
-            const sql = `INSERT INTO bills(BillID, BillLabel, KnessetNum) VALUES (${billID}, '${billNameValidator}', ${knessetNum})`;
-            pool.query(sql, (err, result) => {
-              if (err) {
-                console.error(err.message);
-                throw err;
-              }
-            });
+          const sql = `INSERT INTO bills(BillID, BillLabel, KnessetNum) VALUES (${billID}, '${billNameValidator}', ${knessetNum})`;
+          pool.query(sql, (err, result) => {
+            if (err) {
+              console.error(err.message);
+              throw err;
+            }
+          });
         } else {
           if (result.find((item) => item.name === billName)) {
             const valid = billNameValidator(item.name);
@@ -301,4 +301,3 @@ export const getBillsFromDatabase = () => {
     }
   });
 };
-const getBillId = () => {};
