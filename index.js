@@ -39,13 +39,13 @@ app.get("/getVotes", async (req, res) => {
 //   req.user_votes = [true, false]; //list of) boolean user votes
 
 app.get("/scores", async (req, res) => {
-  console.log(req);
+  // console.log(req);
   console.log(`req.bill_ids: ${req.bill_ids} .`);
   console.log(`req.user_votes: ${req.user_votes} .`);
 
   /* gets bills and user vote from client */
-  req.bill_ids = "16633,16634"; //splits by ,
-  req.user_votes = [true, false]; //list of boolean user votes
+  // req.bill_ids = "16633,16634"; //splits by ,
+  // req.user_votes = [true, false]; //list of boolean user votes
 
   const bill_ids_req = req.bill_ids; // '16633,16634'
   const user_votes_req = req.user_votes; // [true, false]
@@ -60,8 +60,14 @@ app.get("/scores", async (req, res) => {
   /* gets votes of all member from DB */
   const re = { query: { billId: bill_ids_req } };
   const votes = await getVotes(re);
-  // console.log("votes:", votes)
-
+  // console.log("votes:", votes);
+  
+  /* validate there are no errors in getVotes */
+  if ("error" in votes){
+    console.log('error: getVotes faild with error:', votes["error"]);
+    res.send({error: votes["error"]}).json;
+  }
+  
   /* parse votes */
   const map1 = await parseVotes(votes);
   // console.log("map1", map1);
@@ -77,28 +83,43 @@ app.get("/scores", async (req, res) => {
   // console.log("res of findScoresToMembers", res1)
 
   /* Order the answer to the client */
-  const res1 = arrangeDataToClient(map1, scores);
+  const BillNames = billId2BillName(votes);
+  // console.log("BillNames:", BillNames);
+  const res1 = arrangeDataToClient(map1, scores, BillNames);
   // console.log("res1", res1);
 
   res.send(res1).json;
 });
 
-const arrangeDataToClient = (votes_map, scores) => {
+const billId2BillName = (votes) => {
+  const visited = {}
+  votes.forEach(element => {
+    const bill_id = element.BillID;
+    const bill_name = element.BillLabel;
+
+    if ( !(bill_id in visited)){
+      visited[bill_id] = {bill_id: bill_id, bill_name: bill_name};
+    }
+  });
+  return visited;
+}
+
+const arrangeDataToClient = (votes_map, scores, BillNames) => {
   const res = [];
   Object.entries(votes_map).forEach((entries) => {
     const [key, value] = entries;
     // console.log("key:", key);
     // console.log("value:" ,value);
 
-    const voters = value.map(({ member_id, vote }) => ({
+    const voters = value.map(({ member_id, vote, member_name }) => ({
       voter_id: member_id,
-      voter_name: "TODO",
+      voter_name: member_name,
       ballot: vote,
       graded: scores[member_id],
     }));
     const entry = {
       bill_id: key,
-      bill_name: "TODO",
+      bill_name: BillNames[key]["bill_name"],
       voters: voters,
     };
     res.push(entry);
@@ -113,14 +134,16 @@ export const parseVotes = async (votes) => {
 
   awaitedVotes.forEach((element) => {
     const billid = element.BillID;
+    const billname = element.BillLabel;
     const memberid = element.KnessetMemberId;
+    const membername = element.KnessetMemberName;
     const voteVal = element.TypeValue;
+
+    const tmp = { member_id: memberid, vote: voteVal, member_name: membername };
     if (billid in map1 === false) {
-      const tmp = { member_id: memberid, vote: voteVal };
       // tmp[memberid] = voteVal
       map1[billid] = [tmp];
     } else {
-      const tmp = { member_id: memberid, vote: voteVal };
       // tmp[memberid] = voteVal
       map1[billid].push(tmp);
     }
