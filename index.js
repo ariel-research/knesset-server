@@ -34,9 +34,6 @@ app.get("/getVotes", async (req, res) => {
   const votes = await getVotes({ query: { billId: "16633,16634" } });
   res.status(200).json({ data: votes });
 });
-// app.get("/scores", async (req, res) => {
-//   req.bill_ids = "16633,16634"; //splits by ,
-//   req.user_votes = [true, false]; //list of) boolean user votes
 
 app.post("/scores", async (req, res) => {
   // console.log(req);
@@ -48,8 +45,6 @@ app.post("/scores", async (req, res) => {
   const bill_ids_req = req.body.bill_ids; // '16633,16634'
   const user_votes_req = req.body.user_votes; // [true, false]
 
-  // let bill_ids = '16633';
-  // bill_ids = '16633';
   // בעד - 1
   // נגד - 2
   // נמנע - 3
@@ -61,6 +56,10 @@ app.post("/scores", async (req, res) => {
   // console.log("votes:", votes);
   
   /* validate there are no errors in getVotes */
+  if (votes == null){
+    console.log('error: getVotes faild votes=:', votes);
+    res.send({error: votes}).json;
+  }
   if ("error" in votes){
     console.log('error: getVotes faild with error:', votes["error"]);
     res.send({error: votes["error"]}).json;
@@ -73,12 +72,26 @@ app.post("/scores", async (req, res) => {
   const bill_ids = bill_ids_req.split(",");
   // console.log("bill_ids", bill_ids)
 
-  // console.log(`${bill_ids}, ${user_votes_req}`);
-  // const res1 = findScoresToMembers(bill, [true], map1)
-
   /* gets the score */
   const scores = findScoresToMembers(bill_ids, user_votes_req, map1);
-  // console.log("res of findScoresToMembers", res1)
+  // console.log("res of findScoresToMembers", scores);
+
+  /* validate there are no errors in findScoresToMembers */
+  if (scores == null){
+    console.log("failed to get findScoresToMembers, scores=null");
+    res.send({error: "failed to get findScoresToMembers"}).json;
+  }
+  if ("error" in scores){
+    console.log('error: findScoresToMembers faild with error:', scores["error"], );
+    console.log("bill_ids:", bill_ids);
+    console.log("bill_ids length:", bill_ids.length);
+    console.log("user_votes_req:", user_votes_req);
+    console.log("user_votes_req length:", user_votes_req.length);
+    console.log("map1:", map1);
+    console.log("map1 length:", map1.length);
+
+    res.send({error: scores["error"]}).json;
+  }
 
   /* Order the answer to the client */
   const BillNames = billId2BillName(votes);
