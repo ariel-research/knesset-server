@@ -25,6 +25,11 @@ app.use(cors());
 app.use("/general", generalRoutes);
 app.use("/database", databaseRoutes);
 
+app.get("/", (req, res) => {
+  console.log("Hello from server!!!");
+  res.status(200).json({ result: "Success" });
+});
+
 app.get("/bills", async (req, res) => {
   const bills = await getBillsData();
   res.status(202).json(bills);
@@ -59,9 +64,9 @@ app.get("/scores", async (req, res) => {
   // console.log("votes:", votes);
 
   /* validate there are no errors in getVotes */
-  if ("error" in votes){
-    console.log('error: getVotes faild with error:', votes["error"]);
-    res.send({error: votes["error"]}).json;
+  if ("error" in votes) {
+    console.log("error: getVotes faild with error:", votes["error"]);
+    res.send({ error: votes["error"] }).json;
   }
 
   /* parse votes */
@@ -76,12 +81,15 @@ app.get("/scores", async (req, res) => {
   // console.log("res of findScoresToMembers", scores);
 
   /* validate there are no errors in findScoresToMembers */
-  if (scores == null){
+  if (scores == null) {
     console.log("failed to get findScoresToMembers, scores=null");
-    res.send({error: "failed to get findScoresToMembers"}).json;
+    res.send({ error: "failed to get findScoresToMembers" }).json;
   }
-  if ("error" in scores){
-    console.log('error: findScoresToMembers faild with error:', scores["error"], );
+  if ("error" in scores) {
+    console.log(
+      "error: findScoresToMembers faild with error:",
+      scores["error"]
+    );
     console.log("bill_ids:", bill_ids);
     console.log("bill_ids length:", bill_ids.length);
     console.log("user_votes_req:", user_votes_req);
@@ -89,7 +97,7 @@ app.get("/scores", async (req, res) => {
     console.log("map1:", map1);
     console.log("map1 length:", map1.length);
 
-    res.send({error: scores["error"]}).json;
+    res.send({ error: scores["error"] }).json;
   }
 
   /* Order the answer to the client */
