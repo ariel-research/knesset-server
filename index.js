@@ -25,17 +25,25 @@ app.use(cors());
 app.use("/general", generalRoutes);
 app.use("/database", databaseRoutes);
 
+app.get("/", (req, res) => {
+  console.log("Hello from server!!!");
+  res.status(202).json({ result: "Success" });
+});
+
 app.get("/bills", async (req, res) => {
   const bills = await getBillsData();
   res.status(202).json(bills);
 });
 
 app.get("/getVotes", async (req, res) => {
-  const votes = await getVotes({ query: { billId: "16633,16634" } });
-  res.status(200).json({ data: votes });
+  const votes = await getVotes({ query: { billId: "2080650,2080751" } });
+  res.status(202).json({ data: votes });
 });
+// app.get("/scores", async (req, res) => {
+//   req.bill_ids = "16633,16634"; //splits by ,
+//   req.user_votes = [true, false]; //list of) boolean user votes
 
-app.post("/scores", async (req, res) => {
+app.get("/scores", async (req, res) => {
   // console.log(req);
 
   /* gets bills and user vote from client */
@@ -54,17 +62,13 @@ app.post("/scores", async (req, res) => {
   const re = { query: { billId: bill_ids_req } };
   const votes = await getVotes(re);
   // console.log("votes:", votes);
-  
+
   /* validate there are no errors in getVotes */
-  if (votes == null){
-    console.log('error: getVotes faild votes=:', votes);
-    res.send({error: votes}).json;
+  if ("error" in votes) {
+    console.log("error: getVotes faild with error:", votes["error"]);
+    res.send({ error: votes["error"] }).json;
   }
-  if ("error" in votes){
-    console.log('error: getVotes faild with error:', votes["error"]);
-    res.send({error: votes["error"]}).json;
-  }
-  
+
   /* parse votes */
   const map1 = await parseVotes(votes);
   // console.log("map1", map1);
@@ -77,12 +81,15 @@ app.post("/scores", async (req, res) => {
   // console.log("res of findScoresToMembers", scores);
 
   /* validate there are no errors in findScoresToMembers */
-  if (scores == null){
+  if (scores == null) {
     console.log("failed to get findScoresToMembers, scores=null");
-    res.send({error: "failed to get findScoresToMembers"}).json;
+    res.send({ error: "failed to get findScoresToMembers" }).json;
   }
-  if ("error" in scores){
-    console.log('error: findScoresToMembers faild with error:', scores["error"], );
+  if ("error" in scores) {
+    console.log(
+      "error: findScoresToMembers faild with error:",
+      scores["error"]
+    );
     console.log("bill_ids:", bill_ids);
     console.log("bill_ids length:", bill_ids.length);
     console.log("user_votes_req:", user_votes_req);
@@ -90,7 +97,7 @@ app.post("/scores", async (req, res) => {
     console.log("map1:", map1);
     console.log("map1 length:", map1.length);
 
-    res.send({error: scores["error"]}).json;
+    res.send({ error: scores["error"] }).json;
   }
 
   /* Order the answer to the client */
@@ -103,17 +110,17 @@ app.post("/scores", async (req, res) => {
 });
 
 const billId2BillName = (votes) => {
-  const visited = {}
-  votes.forEach(element => {
+  const visited = {};
+  votes.forEach((element) => {
     const bill_id = element.BillID;
     const bill_name = element.BillLabel;
 
-    if ( !(bill_id in visited)){
-      visited[bill_id] = {bill_id: bill_id, bill_name: bill_name};
+    if (!(bill_id in visited)) {
+      visited[bill_id] = { bill_id: bill_id, bill_name: bill_name };
     }
   });
   return visited;
-}
+};
 
 const arrangeDataToClient = (votes_map, scores, BillNames) => {
   const res = [];
@@ -163,16 +170,16 @@ export const parseVotes = async (votes) => {
   return map1;
 };
 
-const port = 8080;
-app.listen(port, () => {
-  console.log(`server is listening http://localhost:${port}`);
-});
+// const port = 8080;
+// app.listen(port, () => {
+//   console.log(`server is listening http://localhost:${port}`);
+// });
 /**
  * for deployment
  */
-// const port = 8080;
-// app.listen(port, "0.0.0.0", () => {
-//   console.log(`server is listening  on 8080 port`);
-// });
+const port = 8080;
+app.listen(port, "0.0.0.0", () => {
+  console.log(`server is listening  on 8080 port`);
+});
 
 export default parseVotes;

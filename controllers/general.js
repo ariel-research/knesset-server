@@ -1,3 +1,4 @@
+import fetch from "node-fetch";
 import pool from "../config/connect.js";
 import {
   getKnessetNumberAmount,
@@ -10,7 +11,6 @@ import {
 import { xmlParser } from "./database.js";
 
 import { findScoresToMembers } from "../Utils/localUtils.js";
-
 
 // const validate = (billUserOpinion) => {
 //   const possibleValue = [1, -1];
@@ -76,6 +76,7 @@ const billIdsWithoutDuplicates = async (billIds) => {
 export const getVotes = async (req) => {
   try {
     const { billId } = req.query;
+    console.log(billId);
     if (!billId || billId === "") {
       return null;
     }
@@ -104,7 +105,9 @@ export const getVotes = async (req) => {
       } else {
         console.log("voteExistsInDB: False");
         const url = `http://knesset.gov.il/Odata/Votes.svc/vote_rslts_kmmbr_shadow?$filter=vote_id%20eq%20${voteIdFromDB}`;
+        console.log(url);
         const response = await fetch(url);
+        console.log("Break function problem here?!?!?")
         const toXmlParser = await response.text();
         const data = await xmlParser(toXmlParser);
         const entries = data["feed"]["entry"];
@@ -153,38 +156,54 @@ export const getScoresController = async (data) => {
    *      }
    */
   /* ---- validate data contains keys ---- */
-  if ( !("user_votes" in data) || !("bill_ids" in data)){
-    console.log("error: getScoresController failed, data dosent contains 'user_votes' and 'bill_ids' keys. data=", data);
-    return {error: "error: the parameter dosent contains the keys: 'user_votes' and 'bill_ids'", data: data}
+  if (!("user_votes" in data) || !("bill_ids" in data)) {
+    console.log(
+      "error: getScoresController failed, data dosent contains 'user_votes' and 'bill_ids' keys. data=",
+      data
+    );
+    return {
+      error:
+        "error: the parameter dosent contains the keys: 'user_votes' and 'bill_ids'",
+      data: data,
+    };
   }
 
   const user_votes = data.user_votes;
   const bill_ids = data.bill_ids;
 
   /* ---- validate data is correct ---- */
-  if (!Array.isArray(user_votes) || !Array.isArray(bill_ids)){
-    console.log("error: getScoresController failed, 'user_votes' and 'bill_ids' sould be an arrays", Array.isArray(user_votes), Array.isArray(bill_ids));
-    return {error: "error: getScoresController failed, 'user_votes' and 'bill_ids' sould be an arrays"};
+  if (!Array.isArray(user_votes) || !Array.isArray(bill_ids)) {
+    console.log(
+      "error: getScoresController failed, 'user_votes' and 'bill_ids' should be an arrays",
+      Array.isArray(user_votes),
+      Array.isArray(bill_ids)
+    );
+    return {
+      error:
+        "error: getScoresController failed, 'user_votes' and 'bill_ids' should be an arrays",
+    };
   }
   if (user_votes.length !== bill_ids.length){
-    const error = "error: user_votes and bill_ids are not the same length."+ " user_votes.length:"+user_votes.length + " bill_ids.length:"+bill_ids.length;
+    const error = "error: user_votes and bill_ids are not the same length."+ 
+                  " user_votes.length:" + user_votes.length + 
+                  " bill_ids.length:" + bill_ids.length;
     console.log(error);
     return {error};
   }
 
   /* ---- get votes ---- */
-  const billId_as_string = bill_ids.join(',');
+  const billId_as_string = bill_ids.join(",");
   const bill_id_query = { query: { billId: billId_as_string } };
   const votes = await getVotes(bill_id_query);
 
   /* ---- getVotes - validate there are no errors ---- */
-  if (votes == null){
-    console.log('error: getVotes faild votes=:', votes);
-    return {error: "getVotes returned null value"};
+  if (votes == null) {
+    console.log("error: getVotes faild votes=:", votes);
+    return { error: "getVotes returned null value" };
   }
-  if ("error" in votes){
-    console.log('error: getVotes faild with error:', votes["error"]);
-    return {error: votes["error"]};
+  if ("error" in votes) {
+    console.log("error: getVotes faild with error:", votes["error"]);
+    return { error: votes["error"] };
   }
 
   /* ---- prepare only the bill ids with user opinion and convert the vote number to boolean ---- */
@@ -210,10 +229,10 @@ export const getScoresController = async (data) => {
       user_boolean_votes_without_no_opinion.push(user_vote);
       user_bill_ids_without_no_opinion.push(bill_id);
     } else {
-      console.log("deleting from map");
+      // console.log("deleting from map");
       if ( bill_id in map_without_no_opinion ){
         delete map_without_no_opinion[bill_id];
-        console.log("bill id:", bill_id, "is deleted from map");
+        // console.log("bill id:", bill_id, "is deleted from map");
       }
     }
   }
@@ -225,12 +244,15 @@ export const getScoresController = async (data) => {
   const scores = findScoresToMembers(user_bill_ids_without_no_opinion, user_boolean_votes_without_no_opinion, map_without_no_opinion);
 
   /* ---- findScoresToMembers - validate there are no errors ---- */
-  if (scores == null){
+  if (scores == null) {
     console.log("failed to get findScoresToMembers, scores=null");
-    return {error: "failed to get findScoresToMembers"};
+    return { error: "failed to get findScoresToMembers" };
   }
-  if ("error" in scores){
-    console.log('error: findScoresToMembers faild with error:', scores["error"], );
+  if ("error" in scores) {
+    console.log(
+      "error: findScoresToMembers faild with error:",
+      scores
+    );
     console.log("bill_ids:", bill_ids);
     console.log("bill_ids length:", bill_ids.length);
     console.log("user_votes:", user_votes);
@@ -247,13 +269,13 @@ export const getScoresController = async (data) => {
    *        batch : [
    *                  {
    *                    bill_id   : integer,
-   *                    bill_name : string, 
+   *                    bill_name : string,
    *                    voters : [
    *                              {
    *                                votes_id : integer,
    *                                voter_name : string,
    *                                ballot : integer,    // 1,2,3,4
-   *                                graded : integer     // between -100 , 100 
+   *                                graded : integer     // between -100 , 100
    *                              },
    *                              ...
    *                             ]
@@ -270,21 +292,20 @@ export const getScoresController = async (data) => {
   const res1 = arrangeDataToClient(map1, scores, BillNames);
 
   return res1;
-}
-
+};
 
 const billId2BillName = (votes) => {
-  const visited = {}
-  votes.forEach(element => {
+  const visited = {};
+  votes.forEach((element) => {
     const bill_id = element.BillID;
     const bill_name = element.BillLabel;
 
-    if ( !(bill_id in visited)){
-      visited[bill_id] = {bill_id: bill_id, bill_name: bill_name};
+    if (!(bill_id in visited)) {
+      visited[bill_id] = { bill_id: bill_id, bill_name: bill_name };
     }
   });
   return visited;
-}
+};
 
 const arrangeDataToClient = (votes_map, scores, BillNames) => {
   const res = [];
