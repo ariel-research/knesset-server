@@ -27,7 +27,7 @@ app.use("/database", databaseRoutes);
 
 app.get("/", (req, res) => {
   console.log("Hello from server!!!");
-  res.status(200).json({ result: "Success" });
+  res.status(202).json({ result: "Success" });
 });
 
 app.get("/bills", async (req, res) => {
@@ -37,7 +37,7 @@ app.get("/bills", async (req, res) => {
 
 app.get("/getVotes", async (req, res) => {
   const votes = await getVotes({ query: { billId: "16633,16634" } });
-  res.status(200).json({ data: votes });
+  res.status(202).json({ data: votes });
 });
 // app.get("/scores", async (req, res) => {
 //   req.bill_ids = "16633,16634"; //splits by ,

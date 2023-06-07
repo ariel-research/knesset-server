@@ -104,7 +104,9 @@ export const getVotes = async (req) => {
       } else {
         console.log("voteExistsInDB: False");
         const url = `http://knesset.gov.il/Odata/Votes.svc/vote_rslts_kmmbr_shadow?$filter=vote_id%20eq%20${voteIdFromDB}`;
+        console.log(url);
         const response = await fetch(url);
+        console.log("Break function problem here?!?!?")
         const toXmlParser = await response.text();
         const data = await xmlParser(toXmlParser);
         const entries = data["feed"]["entry"];
@@ -177,7 +179,7 @@ export const getScoresController = async (data) => {
     );
     return {
       error:
-        "error: getScoresController failed, 'user_votes' and 'bill_ids' sould be an arrays",
+        "error: getScoresController failed, 'user_votes' and 'bill_ids' should be an arrays",
     };
   }
 
