@@ -148,7 +148,7 @@ export default getVotes;
 export const getScoresController = async (data) => {
   /**
    * data {
-   *        user_votes  : [boolean,],
+   *        user_votes  : [integer,], // 1-PRO|2-CON|3-no opinion
    *        bill_ids    : [integer,]
    *      }
    */
@@ -166,6 +166,11 @@ export const getScoresController = async (data) => {
     console.log("error: getScoresController failed, 'user_votes' and 'bill_ids' sould be an arrays", Array.isArray(user_votes), Array.isArray(bill_ids));
     return {error: "error: getScoresController failed, 'user_votes' and 'bill_ids' sould be an arrays"};
   }
+  if (user_votes.length !== bill_ids.length){
+    const error = "error: user_votes and bill_ids are not the same length."+ " user_votes.length:"+user_votes.length + " bill_ids.length:"+bill_ids.length;
+    console.log(error);
+    return {error};
+  }
 
   /* ---- get votes ---- */
   const billId_as_string = bill_ids.join(',');
@@ -182,10 +187,42 @@ export const getScoresController = async (data) => {
     return {error: votes["error"]};
   }
 
+  /* ---- prepare only the bill ids with user opinion and convert the vote number to boolean ---- */
+  const map1 = await parseVotes(votes);
+
+  const map_without_no_opinion = { ...map1 };
+  const user_bill_ids_without_no_opinion = [];
+  const user_boolean_votes_without_no_opinion = [];
+  for (let index = 0; index < user_votes.length; index++) {
+    let user_vote = user_votes[index];
+    const bill_id = bill_ids[index];
+    if (user_vote !== 3){
+      if (user_vote === 1){
+        user_vote = true;
+      } else
+      if (user_vote === 2){
+        user_vote = false;
+      } else{
+        const error = "error: user_votes sould be an array of integers, 1,2,3";
+        console.log(error);
+        return {"error": error};
+      }
+      user_boolean_votes_without_no_opinion.push(user_vote);
+      user_bill_ids_without_no_opinion.push(bill_id);
+    } else {
+      console.log("deleting from map");
+      if ( bill_id in map_without_no_opinion ){
+        delete map_without_no_opinion[bill_id];
+        console.log("bill id:", bill_id, "is deleted from map");
+      }
+    }
+  }
+  // console.log("user_boolean_votes_without_no_opinion:", user_boolean_votes_without_no_opinion);
+  // console.log("user_bill_ids_without_no_opinion:", user_bill_ids_without_no_opinion);
+  // console.log("map_without_no_opinion:", Object.keys(map_without_no_opinion));
 
   /* --- gets the score ---- */
-  const map1 = await parseVotes(votes);
-  const scores = findScoresToMembers(bill_ids, user_votes, map1);
+  const scores = findScoresToMembers(user_bill_ids_without_no_opinion, user_boolean_votes_without_no_opinion, map_without_no_opinion);
 
   /* ---- findScoresToMembers - validate there are no errors ---- */
   if (scores == null){
@@ -201,7 +238,7 @@ export const getScoresController = async (data) => {
     console.log("map1:", map1);
     console.log("map1 length:", Object.keys(map1).length);
 
-    return {error: scores["error"]};
+    return {error: scores};
   }
 
   /* ---- order the result ---- */
@@ -226,6 +263,10 @@ export const getScoresController = async (data) => {
    *      }
    */
   const BillNames = billId2BillName(votes);
+  // console.log("scores:", scores);
+  // console.log("BillNames:", BillNames);
+  // console.log("map1:", map1);
+
   const res1 = arrangeDataToClient(map1, scores, BillNames);
 
   return res1;

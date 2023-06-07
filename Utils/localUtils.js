@@ -31,7 +31,7 @@ export const findScoresToMembers = (
     // console.log("user_vote_list.length", user_vote_list.length)
     // console.log("Object.keys(members_vote_object).length", Object.keys(members_vote_object).length)
     // throw new TypeError(); // throws en error
-    return { error: "data length error" };
+    return { error: "data length error","bill_ids_list.length": bill_ids_list.length, "user_vote_list.length": user_vote_list.length, "Object.keys(members_vote_object).length":Object.keys(members_vote_object).length };
   }
   /**  for all bill_id in bill_ids_list:
    *     for all member, vote in items:
