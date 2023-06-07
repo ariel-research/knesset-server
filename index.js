@@ -37,7 +37,6 @@ app.get("/getVotes", async (req, res) => {
 // app.get("/scores", async (req, res) => {
 //   req.bill_ids = "16633,16634"; //splits by ,
 //   req.user_votes = [true, false]; //list of) boolean user votes
-
 app.get("/scores", async (req, res) => {
   // console.log(req);
   console.log(`req.bill_ids: ${req.bill_ids} .`);
@@ -61,13 +60,13 @@ app.get("/scores", async (req, res) => {
   const re = { query: { billId: bill_ids_req } };
   const votes = await getVotes(re);
   // console.log("votes:", votes);
-  
+
   /* validate there are no errors in getVotes */
-  if ("error" in votes){
-    console.log('error: getVotes faild with error:', votes["error"]);
-    res.send({error: votes["error"]}).json;
+  if ("error" in votes) {
+    console.log("error: getVotes faild with error:", votes["error"]);
+    res.send({ error: votes["error"] }).json;
   }
-  
+
   /* parse votes */
   const map1 = await parseVotes(votes);
   // console.log("map1", map1);
@@ -92,17 +91,17 @@ app.get("/scores", async (req, res) => {
 });
 
 const billId2BillName = (votes) => {
-  const visited = {}
-  votes.forEach(element => {
+  const visited = {};
+  votes.forEach((element) => {
     const bill_id = element.BillID;
     const bill_name = element.BillLabel;
 
-    if ( !(bill_id in visited)){
-      visited[bill_id] = {bill_id: bill_id, bill_name: bill_name};
+    if (!(bill_id in visited)) {
+      visited[bill_id] = { bill_id: bill_id, bill_name: bill_name };
     }
   });
   return visited;
-}
+};
 
 const arrangeDataToClient = (votes_map, scores, BillNames) => {
   const res = [];

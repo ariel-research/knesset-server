@@ -33,6 +33,9 @@ const validateRightStructureForBills = async (data) => {
   TypeValue: 1
 }
  */
+/*
+  
+*/
 const validateRightStructureForVotes = async (data) => {
   const votesToClient = await data;
   for (const element of votesToClient) {

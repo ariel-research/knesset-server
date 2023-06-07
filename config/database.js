@@ -17,7 +17,6 @@ function validate(valid) {
  */
 
 const validDate = (publishDate) => {
-  // console.log(publishDate);
   let valid =
     typeof publishDate === "string" ? publishDate.replace("T", " ") : "";
   return valid;
@@ -300,4 +299,40 @@ export const getBillsFromDatabase = () => {
       reject({ error: error.message });
     }
   });
+};
+export const addToVoteListRow = async (
+  voteId,
+  billId,
+  voteDate,
+  against,
+  abstain
+) => {
+  try {
+    pool.query(
+      `${SQL_CHECKING_QUERY} votes_list WHERE VoteID = ${voteId}`,
+      (err, res) => {
+        if (err) {
+          console.error("Error in insertVoteForBillRow function");
+          throw err;
+        }
+        if (res[0]) {
+          if (res[0]["COUNT(*)"] === 0) {
+            const date = validDate(voteDate);
+            pool.query(
+              `INSERT INTO votes_list(VoteID, BillID, VoteDate, TotalAgainst, TotalAbstain) VALUES (${voteId}, ${billId}, '${date}', ${against}, ${abstain})`,
+              (err, res) => {
+                if (err) {
+                  console.error(`Got some error with VoteID: ${voteId}`);
+                  throw err;
+                }
+              }
+            );
+          }
+        }
+      }
+    );
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 };
