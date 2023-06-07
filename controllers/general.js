@@ -1,3 +1,4 @@
+import fetch from "node-fetch";
 import pool from "../config/connect.js";
 import {
   getKnessetNumberAmount,
