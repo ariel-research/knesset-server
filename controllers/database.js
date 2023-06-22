@@ -188,7 +188,7 @@ export const getBillVoteIds = async (req, res) => {
 };
 export const votesList = async (req, res) => {
   let skip = 0;
-  let knessetNum = 1;
+  let knessetNum = 24;
   const top = 100;
   try {
     while (knessetNum <= 25) {
@@ -197,7 +197,6 @@ export const votesList = async (req, res) => {
       skip = 0;
       while (true) {
         const url = `https://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved?$filter=knesset_num%20eq%20${knessetNum}&$skip=${skip}&$top=${top}`;
-
         const response = await fetch(url);
         if (!response) {
           console.log("response problem");
@@ -207,6 +206,7 @@ export const votesList = async (req, res) => {
           console.log("break in xml parser");
         }
         const data = await xmlParser(toXmlParser);
+        console.log(data);
         if (!data) {
           console.log("break in data");
           break;
@@ -228,6 +228,9 @@ export const votesList = async (req, res) => {
               entry["content"][0]["m:properties"][0]["d:total_against"][0]["_"],
             abstain:
               entry["content"][0]["m:properties"][0]["d:total_abstain"][0]["_"],
+            knessetNum:
+              entry["content"][0]["m:properties"][0]["d:knesset_num"][0]["_"],
+            voteTime: entry["content"][0]["m:properties"][0]["d:vote_time"][0],
           };
         });
         for (let voteElement of voteIds) {
@@ -236,7 +239,9 @@ export const votesList = async (req, res) => {
             voteElement.BillID,
             voteElement.VoteDate,
             voteElement.against,
-            voteElement.abstain
+            voteElement.abstain,
+            voteElement.knessetNum,
+            voteElement.voteTime
           );
         }
         skip += top;

@@ -1,7 +1,11 @@
 import jest from "jest";
 import parseVotes from "../../index.js";
-import getVotes from "../../controllers/general.js";
-import { getBillsFromDatabase } from "../../config/database.js";
+import getVotes, { getBillsByKnessetNum } from "../../controllers/general.js";
+import {
+  getBillsByKnessetNumFromDB,
+  getBillsFromDatabase,
+  getNumOfBillsWithVotes,
+} from "../../config/database.js";
 
 const checkForDuplicatedIds = async (data) => {
   const awaitedData = await data;
@@ -116,5 +120,15 @@ describe("getBillsData() testing", () => {
     const data = await getBillsFromDatabase();
     const resVal = await checkForDuplicatedIds(data);
     expect(resVal).toBe(true);
+  });
+  test("check if the number bills with votes is the number that exist in the sql", async () => {
+    const data = await getBillsFromDatabase();
+    expect(data.length).toBe(await getNumOfBillsWithVotes());
+  });
+});
+describe("getBillByKnessetNum() testing", () => {
+  test("check if the default knesset Number is 1", async () => {
+    const billsByKnessetNum = await getBillsByKnessetNumFromDB(24);
+    expect(billsByKnessetNum).toBe({ bills: [{}] });
   });
 });

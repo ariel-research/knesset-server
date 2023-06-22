@@ -16,9 +16,13 @@ function validate(valid) {
  * @returns
  */
 
-const validDate = (publishDate) => {
+const validDate2 = (publishDate) => {};
+const validDate = async (publishDate, voteTime) => {
+  voteTime = typeof voteTime === "string" ? " " + voteTime + ":00" : "";
   let valid =
-    typeof publishDate === "string" ? publishDate.replace("T", " ") : "";
+    typeof publishDate === "string"
+      ? publishDate.replace("T00:00:00", voteTime)
+      : "";
   return valid;
 };
 const SQL_CHECKING_QUERY = "SELECT COUNT(*) FROM";
@@ -162,7 +166,7 @@ export const getVoteId = async (billId) => {
 export const getKnessetNumberAmount = async () => {
   return new Promise((resolve, reject) => {
     pool.query(
-      `SELECT KnessetNum FROM knesset.bills GROUP BY KnessetNum ORDER BY KnessetNum`,
+      `SELECT KnessetNum FROM bills GROUP BY KnessetNum ORDER BY KnessetNum`,
       (err, res) => {
         if (err) {
           console.error(err);
@@ -239,7 +243,7 @@ export const checkIfVoteExistInDB = async (voteId) => {
  * @param {*} memberID
  * @param {*} voteValue
  */
-export const insertVoteForBillRow = async (
+export const insertVoteForVotesRow = async (
   voteId,
   billID,
   memberID,
@@ -250,7 +254,7 @@ export const insertVoteForBillRow = async (
       `${SQL_CHECKING_QUERY} votes WHERE VoteID = ${voteId}`,
       (err, res) => {
         if (err) {
-          console.error("Error in insertVoteForBillRow function");
+          console.error("Error in insertVoteForVotesRow function");
           throw err;
         }
         if (res[0]) {
@@ -276,13 +280,35 @@ export const insertVoteForBillRow = async (
     throw err;
   }
 };
+/**
+ * For testing issues, query helper for using get only the bills that's have votes.
+ * @returns
+ */
+export const getNumOfBillsWithVotes = async () => {
+  return new Promise((resolve, reject) => {
+    try {
+      pool.query(
+        "SELECT COUNT(*) FROM bills WHERE VoteID",
+        (err, res) => {
+          if (err) reject(err);
+          const resCount = res[0]["COUNT(*)"];
+          resolve(resCount);
+        }
+      );
+    } catch (err) {
+      reject(err);
+    }
+  });
+};
 export const getBillsFromDatabase = () => {
   return new Promise((resolve, reject) => {
     try {
       pool.query(
-        "SELECT * FROM knesset.bills WHERE VoteID",
+        "SELECT * FROM bills WHERE VoteID",
         (error, results) => {
-          if (error) reject(error);
+          if (error) {
+            reject(error);
+          }
 
           // Transform the results into an array
           const data = results.map((row) => ({
@@ -305,21 +331,24 @@ export const addToVoteListRow = async (
   billId,
   voteDate,
   against,
-  abstain
+  abstain,
+  knessetNum,
+  voteTime
 ) => {
   try {
     pool.query(
       `${SQL_CHECKING_QUERY} votes_list WHERE VoteID = ${voteId}`,
-      (err, res) => {
+      async (err, res) => {
         if (err) {
           console.error("Error in insertVoteForBillRow function");
           throw err;
         }
         if (res[0]) {
           if (res[0]["COUNT(*)"] === 0) {
-            const date = validDate(voteDate);
+            const date = await validDate(voteDate, voteTime);
+            console.log(voteId);
             pool.query(
-              `INSERT INTO votes_list(VoteID, BillID, VoteDate, TotalAgainst, TotalAbstain) VALUES (${voteId}, ${billId}, '${date}', ${against}, ${abstain})`,
+              `INSERT INTO votes_list(VoteID, BillID, VoteDate, TotalAgainst, TotalAbstain, KnessetNum) VALUES (${voteId}, ${billId}, '${date}', ${against}, ${abstain},${knessetNum})`,
               (err, res) => {
                 if (err) {
                   console.error(`Got some error with VoteID: ${voteId}`);
@@ -335,4 +364,24 @@ export const addToVoteListRow = async (
     console.error(error);
     throw error;
   }
+};
+export const getBillsByKnessetNumFromDB = (knessetNum) => {
+  return new Promise((resolve, reject) => {
+    console.log(knessetNum);
+    pool.query(
+      `SELECT * FROM bills WHERE VoteID AND KnessetNum = ?`,
+      [knessetNum],
+      function (error, results, fields) {
+        if (error) {
+          reject({ error: error.message });
+        }
+
+        const bills = results.map((row) => ({
+          name: row.BillLabel,
+          id: row.BillID,
+        }));
+        resolve({ bills });
+      }
+    );
+  });
 };

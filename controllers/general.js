@@ -3,10 +3,11 @@ import pool from "../config/connect.js";
 import {
   getKnessetNumberAmount,
   getBillsFromDatabase,
-  insertVoteForBillRow,
+  insertVoteForVotesRow,
   getVoteId,
   retrieveVotesFromDB,
   checkIfVoteExistInDB,
+  getBillsByKnessetNumFromDB,
 } from "../config/database.js";
 import { xmlParser } from "./database.js";
 
@@ -39,24 +40,11 @@ export const getBillsData = async (req, res) => {
     return res.status(404).json(error.message);
   }
 };
-export const getBillsByKnessetNum = (req, res) => {
+export const getBillsByKnessetNum = async (req, res) => {
   try {
     const { knessetNum = 1 } = req.query;
-    pool.query(
-      `SELECT * FROM knesset.bills WHERE VoteID AND KnessetNum = ?`,
-      [knessetNum],
-      function (error, results, fields) {
-        if (error) {
-          return res.status(404).json({ error: error.message });
-        }
-
-        const bills = results.map((row) => ({
-          name: row.BillLabel,
-          id: row.BillID,
-        }));
-        return res.status(200).json({ bills });
-      }
-    );
+    const bills = await getBillsByKnessetNumFromDB(knessetNum);
+    return res.status(200).json(bills);
   } catch (error) {
     return res.status(404).json(error);
   }
@@ -107,7 +95,7 @@ export const getVotes = async (req) => {
         const url = `http://knesset.gov.il/Odata/Votes.svc/vote_rslts_kmmbr_shadow?$filter=vote_id%20eq%20${voteIdFromDB}`;
         console.log(url);
         const response = await fetch(url);
-        console.log("Break function problem here?!?!?")
+        console.log("Break function problem here?!?!?");
         const toXmlParser = await response.text();
         const data = await xmlParser(toXmlParser);
         const entries = data["feed"]["entry"];
@@ -125,7 +113,7 @@ export const getVotes = async (req) => {
         votesToInsert.push(...votes);
 
         for (let vote of votesToInsert) {
-          await insertVoteForBillRow(
+          await insertVoteForVotesRow(
             vote.voteId,
             vote.BillId,
             vote.knessetMemberId,

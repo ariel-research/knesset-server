@@ -170,16 +170,16 @@ export const parseVotes = async (votes) => {
   return map1;
 };
 
-// const port = 8080;
-// app.listen(port, () => {
-//   console.log(`server is listening http://localhost:${port}`);
-// });
+const port = 8080;
+app.listen(port, () => {
+  console.log(`server is listening http://localhost:${port}`);
+});
 /**
  * for deployment
  */
-const port = 8080;
-app.listen(port, "0.0.0.0", () => {
-  console.log(`server is listening  on 8080 port`);
-});
+// const port = 8080;
+// app.listen(port, "0.0.0.0", () => {
+//   console.log(`server is listening  on 8080 port`);
+// });
 
 export default parseVotes;

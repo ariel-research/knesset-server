@@ -24,8 +24,8 @@ const pool = createPool({
   user: process.env.CLOUD_SQL_USERNAME,
   password: process.env.CLOUD_SQL_PASSWORD,
   connectionLimit: 10,
-  database: "knesset",
-  port: "3306",
+  database: process.env.CLOUD_SQL_DATABASE,
+  port: process.env.CLOUD_SQL_PORT,
 });
 
 pool
