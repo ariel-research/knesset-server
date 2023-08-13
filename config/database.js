@@ -127,15 +127,30 @@ export const insertBillRow = async (
  */
 export const updateVoteId = async (billId, voteId) => {
   try {
-    const sql = `UPDATE bills SET VoteID = ${voteId} WHERE BillID = ${billId}`;
-    pool.query(sql, (err, res) => {
+    const search = `${SQL_CHECKING_QUERY} bills WHERE BillId = ${billId}`;
+    pool.query(search, (err, res) => {
       if (err) {
-        console.error(err);
-        throw err;
+        console.error(`error: ${err}`);
+      }
+      console.log(res[0]["COUNT(*)"]);
+      if (res && res[0]["COUNT(*)"] === 0) {
+        console.log(`The BillID of the next couple is not exist in bills table, BillId: ${billId}  Vote ID: ${voteId}`);
       } else {
-        console.log(`Updated successfully vote_id to bill_id: ${billId}`);
+        console.log("Found");
       }
     });
+    // const sql = `UPDATE bills SET VoteID = ${voteId} WHERE BillID = ${billId}`;
+    // pool.query(sql, (err, res) => {
+    //   if (err) {
+    //     console.log();
+    //     console.error(err);
+    //     throw err;
+    //   } else {
+    //     console.log(res);
+    //     // if(res["message"] )
+    //     console.log(`Updated successfully vote_id to bill_id: ${billId}`);
+    //   }
+    // });
   } catch (err) {
     console.error(`Failed to update property vote_id in ${billId}`);
     throw err;
@@ -287,14 +302,11 @@ export const insertVoteForVotesRow = async (
 export const getNumOfBillsWithVotes = async () => {
   return new Promise((resolve, reject) => {
     try {
-      pool.query(
-        "SELECT COUNT(*) FROM bills WHERE VoteID",
-        (err, res) => {
-          if (err) reject(err);
-          const resCount = res[0]["COUNT(*)"];
-          resolve(resCount);
-        }
-      );
+      pool.query("SELECT COUNT(*) FROM bills WHERE VoteID", (err, res) => {
+        if (err) reject(err);
+        const resCount = res[0]["COUNT(*)"];
+        resolve(resCount);
+      });
     } catch (err) {
       reject(err);
     }
@@ -303,24 +315,21 @@ export const getNumOfBillsWithVotes = async () => {
 export const getBillsFromDatabase = () => {
   return new Promise((resolve, reject) => {
     try {
-      pool.query(
-        "SELECT * FROM bills WHERE VoteID",
-        (error, results) => {
-          if (error) {
-            reject(error);
-          }
-
-          // Transform the results into an array
-          const data = results.map((row) => ({
-            id: row.BillID,
-            label: row.BillLabel,
-            knessetNum: row.KnessetNum,
-          }));
-
-          // Return the data as a JSON array
-          resolve(data);
+      pool.query("SELECT * FROM bills WHERE VoteID", (error, results) => {
+        if (error) {
+          reject(error);
         }
-      );
+
+        // Transform the results into an array
+        const data = results.map((row) => ({
+          id: row.BillID,
+          label: row.BillLabel,
+          knessetNum: row.KnessetNum,
+        }));
+
+        // Return the data as a JSON array
+        resolve(data);
+      });
     } catch (error) {
       reject({ error: error.message });
     }

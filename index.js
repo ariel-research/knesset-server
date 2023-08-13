@@ -175,7 +175,7 @@ app.listen(port, () => {
   console.log(`server is listening http://localhost:${port}`);
 });
 /**
- * for deployment
+ * for deployments
  */
 // const port = 8080;
 // app.listen(port, "0.0.0.0", () => {

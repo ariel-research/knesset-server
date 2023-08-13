@@ -74,7 +74,7 @@ export const findScoresToMembers = (
   });
   // console.log("member_score", member_score)
 
-  /* caculate the score of every member ->  ((member_points / bills len) * 100)  */
+  /* calculate the score of every member ->  ((member_points / bills len) * 100)  */
   for (const [key, score] of Object.entries(member_score)) {
     // console.log(`${key}, ${score}`)
     member_score[key] = (score / bill_len) * 100;

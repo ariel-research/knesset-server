@@ -70,7 +70,7 @@ const fetchBills = async (res, skip, knessetNum) => {
  * @returns
  */
 export const getBillsByKnessetNum = async (req, res) => {
-  let knessetNum = 1;
+  let knessetNum = 24;
   while (knessetNum <= 25) {
     await fetchBills(res, 0, knessetNum);
     knessetNum++;
@@ -145,7 +145,7 @@ export const getKnessetMembers = async (res) => {
  * @returns
  */
 export const getBillVoteIds = async (req, res) => {
-  let knessetNum = 1;
+  let knessetNum = 0;
   let skip = 0;
   let top = 100;
   try {
