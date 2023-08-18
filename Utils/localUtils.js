@@ -21,9 +21,9 @@ export const findScoresToMembers = (
   /* check if len are equals and not zero | bill_ids_list | user_vote_list | members_vote_object.keys | */
 
   if (
-    bill_ids_list.length !== user_vote_list.length ||
-    user_vote_list.length !== Object.keys(members_vote_object).length ||
-    bill_ids_list.length === 0
+    bill_ids_list.length !== user_vote_list.length
+    || user_vote_list.length !== Object.keys(members_vote_object).length 
+    // || bill_ids_list.length === 0 // bill_ids_list could be an empty list in case the user votes only AVOID. 
   ) {
     // console.log("checking" ,(bill_ids_list.length === user_vote_list.length) && user_vote_list.length === Object.keys(members_vote_object).length)
     // console.log("bill_ids_list.length === 0", bill_ids_list.length === 0)
