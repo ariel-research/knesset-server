@@ -21,13 +21,14 @@ Before you begin, make sure you have the following prerequisites:
 3. Navigate to the project directory:
 
    **`cd Political-Transparency`**
+   ** `cd Server`**
 
 ## Step 2: Setting Up the Server
 1. Install the required dependencies by running the following command:
 
      **`npm install`**
 
-2. Create .env file in the root folder of the server and to use MySQL Cloud or Local Server and update with your MySql credentials:
+3. Create .env file in the root folder of the server and to use MySQL Cloud or Local Server and update with your MySql credentials:
    
    ![image](https://github.com/Political-Transparency/server/assets/73185009/183a912e-13a5-454f-8ae9-85dfa8be3535)
 
