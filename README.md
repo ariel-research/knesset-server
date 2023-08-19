@@ -16,12 +16,11 @@ Before you begin, make sure you have the following prerequisites:
 
 2. Clone the Political-Transparency repository from GitHub:
 
-    **`[https://github.com/Political-Transparency/political-transparency.git](https://github.com/Political-Transparency/server.git)`**
-
+    **`https://github.com/Political-Transparency/server`**
+   
 3. Navigate to the project directory:
 
-   **`cd Political-Transparency`**
-   ** `cd Server`**
+   **`cd server`**
 
 ## Step 2: Setting Up the Server
 1. Install the required dependencies by running the following command:
