@@ -210,7 +210,7 @@ export const getScoresController = async (data) => {
       if (user_vote === 2){
         user_vote = false;
       } else{
-        const error = "error: user_votes sould be an array of integers, 1,2,3";
+        const error = "error: user_votes should be an array of integers, 1,2,3";
         console.log(error);
         return {"error": error};
       }

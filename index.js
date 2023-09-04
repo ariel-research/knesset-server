@@ -10,6 +10,7 @@ import morgan from "morgan";
 import { getVotes, getBillsData } from "./controllers/general.js";
 
 import { findScoresToMembers } from "./Utils/localUtils.js";
+import pool, { initializedDatabase } from "./config/connect.js";
 // const findScoresToMembers = require('../Utils/localUtils.js');
 
 dotenv.config();
@@ -170,16 +171,11 @@ export const parseVotes = async (votes) => {
   return map1;
 };
 
-const port = 8080;
+const port = process.env.SERVER_HOST;
 app.listen(port, () => {
-  console.log(`server is listening http://localhost:${port}`);
+  console.log(`Server is listening at http://localhost:${port}`);
+  initializedDatabase();
 });
-/**
- * for deployments
- */
-// const port = 8080;
-// app.listen(port, "0.0.0.0", () => {
-//   console.log(`server is listening  on 8080 port`);
-// });
+
 
 export default parseVotes;
