@@ -37,7 +37,7 @@ Before you begin, make sure you have the following prerequisites:
 
    
 
-## Step 4: Starting the Server
+## Step 3: Starting the Server
 1. Once the configuration is set, you can start the server using the following command:
 
     **`npm start`**
