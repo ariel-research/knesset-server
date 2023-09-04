@@ -22,6 +22,7 @@ router
       // Request body is empty
       console.log("No request body received");
       res.status(400).json({ error: "No request body received" });
+      return;
     }
     const res1 = await getScoresController(req.body);
     console.log("res1:", res1);
