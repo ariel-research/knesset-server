@@ -174,7 +174,7 @@ export const parseVotes = async (votes) => {
 const port = process.env.SERVER_HOST;
 app.listen(port, () => {
   console.log(`Server is listening at http://localhost:${port}`);
-  initializedDatabase();
+  // initializedDatabase();
 });
 
 
