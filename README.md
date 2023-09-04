@@ -6,7 +6,7 @@ This guide will walk you through the installation process of the Political-Trans
 ## Prerequisites
 Before you begin, make sure you have the following prerequisites:
 
-1. **Node.js and npm:** Ensure you have Node.js and npm (Node Package Manager) installed on your system. You can download them from nodejs.org.
+1. **Node.js and npm:** Ensure you have Node.js (v18.13.0) and npm (v8.19.3) installed on your system. You can download them from nodejs.org.
 2. **GitHub Account:** You'll need a GitHub account to access the repository and download the code.
 3. **MySql Server:** You'll need to configure MySql server on the local machine see the next tutorial for it: https://www.javatpoint.com/how-to-install-mysql
 
