@@ -8,6 +8,7 @@ Before you begin, make sure you have the following prerequisites:
 
 1. **Node.js and npm:** Ensure you have Node.js and npm (Node Package Manager) installed on your system. You can download them from nodejs.org.
 2. **GitHub Account:** You'll need a GitHub account to access the repository and download the code.
+3. **MySql Server:** You'll need to configure MySql server on the local machine see the next tutorial for it: https://www.javatpoint.com/how-to-install-mysql
 
 ## Step 1: Cloning the Repository
 1. Open your terminal and navigate to the directory where you want to clone the repository:
@@ -26,12 +27,17 @@ Before you begin, make sure you have the following prerequisites:
 1. Install the required dependencies by running the following command:
 
      **`npm install`**
+2. On your local host machine, open you'r local MySql Server and configure a new scheme called "knesset".
+   
 
 3. Create .env file in the root folder of the server and to use MySQL Cloud or Local Server and update with your MySql credentials:
    
    ![image](https://github.com/Political-Transparency/server/assets/73185009/183a912e-13a5-454f-8ae9-85dfa8be3535)
 
-## Step 3: Starting the Server
+
+   
+
+## Step 4: Starting the Server
 1. Once the configuration is set, you can start the server using the following command:
 
     **`npm start`**
