@@ -34,7 +34,7 @@ Before you begin, make sure you have the following prerequisites:
    
    ![image](https://github.com/Political-Transparency/server/assets/73185009/183a912e-13a5-454f-8ae9-85dfa8be3535)
 
-
+<b>Note:<b> .env file should be in a common file for client and server repos.
    
 
 ## Step 3: Starting the Server
