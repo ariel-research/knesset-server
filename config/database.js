@@ -1,6 +1,7 @@
 import { rejects } from "assert";
 import pool from "../config/connect.js";
 import { resolve } from "path";
+import { error } from "console";
 
 /**
  * A valid structure for bill label using regex for replacing multiple invalid characters.
@@ -96,52 +97,45 @@ export const insertBillRow = async (
   knessetNum,
   publishDate
 ) => {
-  pool.query(
-    `${SQL_CHECKING_QUERY} bills WHERE BillID = ${billID}`,
-    async (err, result) => {
-      if (err) throw err;
-      if (result[0]) {
-        if (result[0]["COUNT(*)"] === 0) {
-          const billNameValidator = validate(billName);
-          const sql = `INSERT INTO bills(BillID, BillLabel, KnessetNum) VALUES (${billID}, '${billNameValidator}', ${knessetNum})`;
-          pool.query(sql, (err, result) => {
-            if (err) {
-              console.error(err.message);
-              throw err;
-            }
-          });
-        } else {
-          if (result.find((item) => item.name === billName)) {
-            const valid = billNameValidator(item.name);
-            pool.query(
-              `UPDATE bills SET name = ${valid} WHERE id = ${billID}`,
-              (err, result) => {
-                if (err) throw err;
-                // console.log(`Updated Row with ID: ${billID}`);
-              }
-            );
-          }
-          const bill = result.find(
-            (item) => item.id === billID && item.publish_date === null
-          );
-          if (bill) {
-            const modifiedDate = validDate(publishDate);
-            if (modifiedDate !== "") {
-              try {
-                const updateQuery = `UPDATE bills SET PublishDate = '${modifiedDate}' WHERE BillID = ${billID}`;
-                const updateResult = pool.query(updateQuery);
-                console.log(`Succeed update publish date for bill ${billID}`);
-              } catch (err) {
-                console.error(
-                  `Failed to update publish date for bill ${billID}: ${err}`
-                );
-              }
-            }
-          }
+  return new Promise(async (resolve, rejects) => {
+    try {
+      // Check if the bill already exists
+      const sqlQuery = `SELECT COUNT(*), BillID FROM bills WHERE BillID = ${billID}`;
+      pool.query(sqlQuery, (err, res) => {
+        if (err) {
+          rejects(error);
         }
-      }
+
+        if (res[0] && res[0]["COUNT(*)"] === 0) {
+          const billNameValidator = validate(billName);
+          const sql = `INSERT INTO bills(BillID, BillLabel, KnessetNum) VALUES (?, ?, ?)`;
+          pool.query(sql, [billID, billNameValidator, knessetNum]);
+        } else {
+          // Check if billName needs to be updated
+
+          const valid = validate(billName);
+          const updateNameQuery = `UPDATE bills SET name = ? WHERE id = ?`;
+          pool.query(updateNameQuery, [valid, billID]);
+
+          // Check if publishDate needs to be updated
+          // const billToUpdate = checkingResult.find(
+          //   (item) => item.id === billID && item.publish_date === null
+          // );
+          // if (billToUpdate) {
+          //   const modifiedDate = validDate(publishDate);
+          //   if (modifiedDate !== "") {
+          //     const updateQuery = `UPDATE bills SET PublishDate = ? WHERE BillID = ?`;
+          //     pool.query(updateQuery, [modifiedDate, billID]);
+          //   }
+          // }
+        }
+      });
+      resolve(); // Resolve the promise when done
+    } catch (err) {
+      console.error(`Error in insertBillRow: ${err.message}`);
+      rejects(err); // Reject the promise on error
     }
-  );
+  });
 };
 /**
  * Updating to the last vote of bill
@@ -158,9 +152,7 @@ export const updateVoteId = async (billId, voteId) => {
           reject(err); // Reject on error
         }
         if (res && res[0]["COUNT(*)"] === 0) {
-          console.log(
-            `The BillID ${billId} is not exist on bills table`
-          );
+          // console.log(`The BillID ${billId} is not exist on bills table`);
         } else {
           const sql = `UPDATE bills SET VoteID = ${voteId} WHERE BillID = ${billId}`;
           pool.query(sql, (err, res) => {
@@ -168,7 +160,7 @@ export const updateVoteId = async (billId, voteId) => {
               console.error(err);
               reject(err); // Reject on error
             } else {
-              console.log(`Updated successfully vote_id to bill_id: ${billId}`);
+              // console.log(`Updated successfully vote_id to bill_id: ${billId}`);
               resolve(); // Resolve on success
             }
           });
@@ -380,7 +372,6 @@ export const addToVoteListRow = async (
         if (res[0]) {
           if (res[0]["COUNT(*)"] === 0) {
             const date = await validDate(voteDate, voteTime);
-            console.log(voteId);
             pool.query(
               `INSERT INTO votes_list(VoteID, BillID, VoteDate, TotalAgainst, TotalAbstain, KnessetNum) VALUES (${voteId}, ${billId}, '${date}', ${against}, ${abstain},${knessetNum})`,
               (err, res) => {
@@ -401,7 +392,6 @@ export const addToVoteListRow = async (
 };
 export const getBillsByKnessetNumFromDB = (knessetNum) => {
   return new Promise((resolve, reject) => {
-    console.log(knessetNum);
     pool.query(
       `SELECT * FROM bills WHERE VoteID AND KnessetNum = ?`,
       [knessetNum],

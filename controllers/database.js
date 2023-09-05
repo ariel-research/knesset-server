@@ -19,48 +19,48 @@ export const xmlParser = (xml) => {
   });
 };
 
-const billUrl = `http://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_Bill()`;
-const count = 100;
-
-const fetchBills = async (res, skip, knessetNum) => {
-  try {
-    const response = await fetch(
-      `${billUrl}?$filter=KnessetNum%20eq%20${knessetNum}&$skip=${skip}&count=${count}`
-    );
-    const xml = await response.text();
-    const result = await xmlParser(xml);
-    const entries = await result["feed"]["entry"];
-    if (!entries) {
-      return; // All bills have been fetched
-    }
-    // Map the entries to an array of bill objects
-    const bills = entries.map((entry) => {
-      return {
-        billId: entry["content"][0]["m:properties"][0]["d:BillID"][0]["_"],
-        name:
-          typeof entry["content"][0]["m:properties"][0]["d:Name"][0] ===
-          "string"
-            ? entry["content"][0]["m:properties"][0]["d:Name"][0]
-            : entry["content"][0]["m:properties"][0]["d:Name"][0]["_"],
-        knessetNum:
-          entry["content"][0]["m:properties"][0]["d:KnessetNum"][0]["_"],
-      };
-    });
-
-    for (let bill of bills) {
-      await insertBillRow(
-        bill.billId,
-        bill.name,
-        bill.knessetNum,
-        bill.publishDate
+const fetchBills = async (skip, knessetNum) => {
+  const billUrl = `http://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_Bill()`;
+  const count = 100;
+  while (true) {
+    try {
+      const response = await fetch(
+        `${billUrl}?$filter=KnessetNum%20eq%20${knessetNum}&$skip=${skip}&count=${count}`
       );
-    } // Insert the bills into the database
+      const xml = await response.text();
+      const result = await xmlParser(xml);
+      const entries = await result["feed"]["entry"];
+      if (!entries) {
+        break; // All bills have been fetched
+      }
+      // Map the entries to an array of bill objects
+      const bills = entries.map((entry) => {
+        return {
+          billId: entry["content"][0]["m:properties"][0]["d:BillID"][0]["_"],
+          name:
+            typeof entry["content"][0]["m:properties"][0]["d:Name"][0] ===
+            "string"
+              ? entry["content"][0]["m:properties"][0]["d:Name"][0]
+              : entry["content"][0]["m:properties"][0]["d:Name"][0]["_"],
+          knessetNum:
+            entry["content"][0]["m:properties"][0]["d:KnessetNum"][0]["_"],
+        };
+      });
 
-    // Fetch the next batch of bills recursively
-    return fetchBills(res, skip + count, knessetNum);
-  } catch (err) {
-    console.error(err);
-    return res.status(404).json({ err: err.message + `${skip}` });
+      for (let bill of bills) {
+        await insertBillRow(
+          bill.billId,
+          bill.name,
+          bill.knessetNum,
+          bill.publishDate
+        );
+      } // Insert the bills into the database
+      skip += count;
+    } catch (err) {
+      skip += count;
+      // console.error(err.message);
+      // Break out of the loop on error
+    }
   }
 };
 /**
@@ -69,25 +69,19 @@ const fetchBills = async (res, skip, knessetNum) => {
  * @param {*} res
  * @returns
  */
-export const getBillsByKnessetNum = async (req, res) => {
+export const getBillsByKnessetNum = async () => {
   let knessetNum = 0;
   while (knessetNum <= 25) {
-    await fetchBills(res, 0, knessetNum);
+    await fetchBills(0, knessetNum);
     knessetNum++;
   }
-  // Insert all the bills into the database
-  // for (const bill of allBills) {
-  //   await database.insertBillRow(bill.billId, bill.name, bill.knessetNum);
-  // }
-
-  return res.status(200).json({ success: true });
 };
 /**
  * Insert all the knesset members after go to the api of the knesset.
  * @param {*} res
  * @returns
  */
-export const getKnessetMembers = async (req, res) => {
+export const getKnessetMembers = async () => {
   let skip = 0;
   const pageSize = 100;
   let hasMoreData = true;
@@ -178,9 +172,9 @@ export const getKnessetMembers = async (req, res) => {
 
     // return res.status(404).json({ error: error.message });
   } catch (error) {
-    return res.status(404).json({ error: error.message });
+    console.error("get knessetMembers function: ", error.message);
   }
-  return res.status(200).json({ result: "succeed" });
+  console.log("Knesset members loaded successfully.!");
 };
 /**
  * Insert to bills table all bills that's vote id is existing.
@@ -188,15 +182,13 @@ export const getKnessetMembers = async (req, res) => {
  * @param {*} res
  * @returns
  */
-export const getBillVoteIds = async (req, res) => {
+export const getBillVoteIds = async () => {
   let knessetNum = 0;
   let skip = 0;
   let top = 100;
-
   while (knessetNum <= 25) {
     try {
       skip = 0;
-      console.log(knessetNum);
       while (true) {
         const url = `https://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved?$filter=knesset_num%20eq%20${knessetNum}&$skip=${skip}&$top=${top}`;
         const response = await fetch(url);
@@ -226,14 +218,12 @@ export const getBillVoteIds = async (req, res) => {
         skip = skip + top;
       }
     } catch (error) {
-      console.error(error.message + "skip: ", skip);
+      // console.error(error.message + "skip: ", skip);
       skip = skip + top;
 
       // return res.status(404).json({ error: error.message });
     }
   }
-
-  return res.status(200).json({ result: "success" });
 };
 export const votesList = async (req, res) => {
   let skip = 0;
@@ -241,7 +231,6 @@ export const votesList = async (req, res) => {
   const top = 100;
   try {
     while (knessetNum <= 25) {
-      console.log(knessetNum);
       skip += top;
       skip = 0;
       while (true) {

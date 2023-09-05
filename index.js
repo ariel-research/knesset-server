@@ -11,9 +11,10 @@ import { getVotes, getBillsData } from "./controllers/general.js";
 
 import { findScoresToMembers } from "./Utils/localUtils.js";
 import pool, { initializedDatabase } from "./config/connect.js";
+import { scriptStarter } from "./config/script.js";
 // const findScoresToMembers = require('../Utils/localUtils.js');
 
-dotenv.config({path: '../.env'});
+dotenv.config({ path: "../.env" });
 const app = express();
 app.use(express.json());
 app.use(helmet());
@@ -175,7 +176,7 @@ const port = process.env.SERVER_PORT ?? 8080;
 app.listen(port, () => {
   console.log(`Server is listening at http://localhost:${port}`);
   initializedDatabase();
+  scriptStarter();
 });
-
 
 export default parseVotes;
