@@ -1,4 +1,6 @@
+import { rejects } from "assert";
 import pool from "../config/connect.js";
+import { resolve } from "path";
 
 /**
  * A valid structure for bill label using regex for replacing multiple invalid characters.
@@ -6,8 +8,11 @@ import pool from "../config/connect.js";
  * @returns
  */
 function validate(valid) {
-  let newStr = valid.replace(/[\'\"]+/g, "");
-  return newStr;
+  if (typeof valid === "string") {
+    let newStr = valid.replace(/[\'\"]+/g, "");
+    return newStr;
+  }
+  return valid;
 }
 
 /**
@@ -16,7 +21,6 @@ function validate(valid) {
  * @returns
  */
 
-const validDate2 = (publishDate) => {};
 const validDate = async (publishDate, voteTime) => {
   voteTime = typeof voteTime === "string" ? " " + voteTime + ":00" : "";
   let valid =
@@ -35,31 +39,50 @@ const SQL_CHECKING_QUERY = "SELECT COUNT(*) FROM";
  */
 export const insertKnessetMemberRow = async (
   memberID,
-  memberName,
+  memberFirstName,
+  memberLastName,
   isActive
 ) => {
-  pool.query(
-    `${SQL_CHECKING_QUERY} knesset_members where MemberID = ${memberID}`,
-    (err, result) => {
-      if (err) throw err;
-      // console.log(result[0]["COUNT(*)"] === 0);
-      if (result[0]["COUNT(*)"] === 0) {
-        memberName = validate(memberName);
-        const sql = `INSERT INTO knesset_members(MemberID, FullName, IsActive) VALUES (${memberID}, '${memberName}', ${isActive})`;
-        pool.query(sql, (err, result) => {
-          if (err && err.code == "ER_DUP_ENTRY") {
-            // console.log(`Id: ${memberID} already inserted to the db`);
-          } else if (err) {
-            throw err;
-          }
-          // console.log("Succeed insert into knesset_members new knesset member");
-        });
-      } else {
-        // console.log(`Id: ${memberID} already inserted to the db`);
+  return new Promise((resolve, reject) => {
+    // Check if the memberID already exists in the database
+    pool.query(
+      `${SQL_CHECKING_QUERY} knesset_members where MemberID = ${memberID}`,
+      (err, result) => {
+        if (err) {
+          console.error(err.message);
+          reject(err); // Reject the promise on error
+          return; // Exit the function to prevent further execution
+        }
+
+        // Check if the memberID does not exist (result[0]["COUNT(*)"] === 0)
+        if (result[0]["COUNT(*)"] === 0) {
+          memberFirstName = validate(memberFirstName);
+          memberLastName = validate(memberLastName);
+          const fullName = memberFirstName + " " + memberLastName;
+
+          isActive = isActive === "true" ? 1 : 0;
+          // Insert the new row into the database
+          const sql = `INSERT INTO knesset_members (MemberID, FullName, IsActive) VALUES (?, ?, ?)`;
+          const values = [memberID, fullName, isActive];
+
+          pool.query(sql, values, (err, result) => {
+            if (err) {
+              console.error(
+                `${memberID}, ${memberName}, ${isActive}, ${err.message}`
+              );
+              reject(err); // Reject the promise on error
+            } else {
+              resolve(); // Resolve the promise when the insertion is successful
+            }
+          });
+        } else {
+          resolve(); // Resolve the promise if the memberID already exists
+        }
       }
-    }
-  );
+    );
+  });
 };
+
 /**
  * Main function to insert bills into the local mySql database
  * @param {*} billID
@@ -126,35 +149,37 @@ export const insertBillRow = async (
  * @param {*} voteId
  */
 export const updateVoteId = async (billId, voteId) => {
-  try {
-    const search = `${SQL_CHECKING_QUERY} bills WHERE BillId = ${billId}`;
-    pool.query(search, (err, res) => {
-      if (err) {
-        console.error(`error: ${err}`);
-      }
-      console.log(res[0]["COUNT(*)"]);
-      if (res && res[0]["COUNT(*)"] === 0) {
-        console.log(`The BillID of the next couple is not exist in bills table, BillId: ${billId}  Vote ID: ${voteId}`);
-      } else {
-        console.log("Found");
-      }
-    });
-    // const sql = `UPDATE bills SET VoteID = ${voteId} WHERE BillID = ${billId}`;
-    // pool.query(sql, (err, res) => {
-    //   if (err) {
-    //     console.log();
-    //     console.error(err);
-    //     throw err;
-    //   } else {
-    //     console.log(res);
-    //     // if(res["message"] )
-    //     console.log(`Updated successfully vote_id to bill_id: ${billId}`);
-    //   }
-    // });
-  } catch (err) {
-    console.error(`Failed to update property vote_id in ${billId}`);
-    throw err;
-  }
+  return new Promise((resolve, reject) => {
+    try {
+      const search = `${SQL_CHECKING_QUERY} bills WHERE BillId = ${billId}`;
+      pool.query(search, (err, res) => {
+        if (err) {
+          console.error(`error: ${err}`);
+          reject(err); // Reject on error
+        }
+        if (res && res[0]["COUNT(*)"] === 0) {
+          console.log(
+            `The BillID ${billId} is not exist on bills table`
+          );
+        } else {
+          const sql = `UPDATE bills SET VoteID = ${voteId} WHERE BillID = ${billId}`;
+          pool.query(sql, (err, res) => {
+            if (err) {
+              console.error(err);
+              reject(err); // Reject on error
+            } else {
+              console.log(`Updated successfully vote_id to bill_id: ${billId}`);
+              resolve(); // Resolve on success
+            }
+          });
+        }
+        resolve();
+      });
+    } catch (err) {
+      console.error(`Failed to update property vote_id in ${billId}`);
+      reject(err); // Reject if an exception occurs
+    }
+  });
 };
 
 /**

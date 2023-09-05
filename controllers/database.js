@@ -70,7 +70,7 @@ const fetchBills = async (res, skip, knessetNum) => {
  * @returns
  */
 export const getBillsByKnessetNum = async (req, res) => {
-  let knessetNum = 24;
+  let knessetNum = 0;
   while (knessetNum <= 25) {
     await fetchBills(res, 0, knessetNum);
     knessetNum++;
@@ -87,7 +87,7 @@ export const getBillsByKnessetNum = async (req, res) => {
  * @param {*} res
  * @returns
  */
-export const getKnessetMembers = async (res) => {
+export const getKnessetMembers = async (req, res) => {
   let skip = 0;
   const pageSize = 100;
   let hasMoreData = true;
@@ -97,7 +97,13 @@ export const getKnessetMembers = async (res) => {
         `http://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition()?$filter=PositionID%20eq%2043%20or%20PositionID%20eq%2061&$expand=KNS_Person&$skip=${skip}`
       );
       const xml = await response.text();
-      result = await xmlParser(xml);
+      const result = await xmlParser(xml);
+      if (!result) {
+        console.error("xmlParser Error");
+        res.status(404).json({
+          error: "Xml Parser Error",
+        });
+      }
       const entries = result["feed"]["entry"];
       if (!entries) {
         break;
@@ -105,29 +111,67 @@ export const getKnessetMembers = async (res) => {
         skip += pageSize;
       }
       const knessetMembers = entries.map((entry) => {
-        return {
-          id: entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
-            "m:properties"
-          ][0]["d:PersonID"][0]["_"],
-          fullName:
+        try {
+          if (
+            entry &&
+            entry["link"] &&
+            entry["link"][1] &&
+            entry["link"][1]["m:inline"] &&
+            entry["link"][1]["m:inline"][0] &&
+            entry["link"][1]["m:inline"][0]["entry"] &&
+            entry["link"][1]["m:inline"][0]["entry"][0] &&
+            entry["link"][1]["m:inline"][0]["entry"][0]["content"] &&
+            entry["link"][1]["m:inline"][0]["entry"][0]["content"][0] &&
             entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
               "m:properties"
-            ][0]["d:FirstName"][0] +
-            " " +
-            entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
-              "m:properties"
-            ][0]["d:LastName"][0],
-          isActive:
-            entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
-              "m:properties"
-            ][0]["d:IsCurrent"][0]["_"],
-        };
+            ]
+          ) {
+            const id =
+              entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
+                "m:properties"
+              ][0]["d:PersonID"][0]["_"];
+            const firstName =
+              typeof entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
+                "m:properties"
+              ][0]["d:FirstName"][0] === "string"
+                ? entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
+                    "m:properties"
+                  ][0]["d:FirstName"][0]
+                : entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
+                    "m:properties"
+                  ][0]["d:FirstName"][0]["_"];
+            const lastName =
+              typeof entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
+                "m:properties"
+              ][0]["d:LastName"][0] == "string"
+                ? entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
+                    "m:properties"
+                  ][0]["d:LastName"][0]
+                : entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
+                    "m:properties"
+                  ][0]["d:LastName"][0]["_"];
+            const isActive =
+              entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
+                "m:properties"
+              ][0]["d:IsCurrent"][0]["_"];
+            return {
+              id,
+              firstName,
+              lastName,
+              isActive,
+            };
+          }
+        } catch (error) {
+          console.error(`Error occurred while processing an entry`, error);
+          console.error("Entry details:", entry);
+        }
       });
       for (let member of knessetMembers) {
         await insertKnessetMemberRow(
           member.id,
-          member.fullName,
-          member.isActive.toString()
+          member.firstName,
+          member.lastName,
+          member.isActive
         );
       }
     }
@@ -148,10 +192,11 @@ export const getBillVoteIds = async (req, res) => {
   let knessetNum = 0;
   let skip = 0;
   let top = 100;
-  try {
-    while (knessetNum <= 25) {
+
+  while (knessetNum <= 25) {
+    try {
       skip = 0;
-      knessetNum += 1;
+      console.log(knessetNum);
       while (true) {
         const url = `https://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved?$filter=knesset_num%20eq%20${knessetNum}&$skip=${skip}&$top=${top}`;
         const response = await fetch(url);
@@ -165,6 +210,7 @@ export const getBillVoteIds = async (req, res) => {
         const data = await xmlParser(toXmlParser);
         const entries = data["feed"]["entry"];
         if (!entries) {
+          knessetNum += 1;
           break;
         }
         const voteIds = entries.map((entry) => {
@@ -179,16 +225,19 @@ export const getBillVoteIds = async (req, res) => {
         }
         skip = skip + top;
       }
+    } catch (error) {
+      console.error(error.message + "skip: ", skip);
+      skip = skip + top;
+
+      // return res.status(404).json({ error: error.message });
     }
-    return res.status(200).json({ result: "success" });
-  } catch (error) {
-    console.log(skip);
-    return res.status(404).json({ error: error.message });
   }
+
+  return res.status(200).json({ result: "success" });
 };
 export const votesList = async (req, res) => {
   let skip = 0;
-  let knessetNum = 24;
+  let knessetNum = 0;
   const top = 100;
   try {
     while (knessetNum <= 25) {
