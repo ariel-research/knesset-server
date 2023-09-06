@@ -37,21 +37,14 @@ Before you begin, make sure you have the following prerequisites:
 <b>Note:<b> .env file should be in a common file for client and server repos.
    
 
-## Step 3: Starting the Server
-1. Once the configuration is set, you can start the server using the following command:
+## Step 3: Starting the Server (Initial Setup)
+After configuring the server settings, you can initiate it by running the following command:
 
-    **`npm start`**
+npm start
 
-2. The server will start running on the specified port (default is 8080). You can access it using your web browser or tools like Postman.
+The server will commence operation on the specified port (the default is 8080). You can access it via your web browser or through tools such as Postman.
 
-## Preconfigured Routes (To add all the bills and knesset members to the MySQL server)
-Preconfigured routes that allow you to interact with the MySQL database. These routes provide endpoints to retrieve bills, Knesset members, vote IDs, and vote lists. Here's how to use them:
-
-1. **Retrive Bills**<br/>
-Endpoint: http://localhost:8080/database/bills<br/>Action: Use this endpoint to retrive all bills data from the external API and store it in the database.<br/>
-2. **Retrive Knesset Members:** <br/>
-Endpoint: http://localhost:8080/database/members<br/>
-Action: Use this endpoint to get all Knesset member data from the external API and store it in the database.
+During the initial server startup, a script will execute to initialize the schema and tables. Additionally, it will inject the latest updates from the Knesset API into our MySQL server. Please note that for the first-time setup, this process may take up to 10 minutes to complete.
 
 
 ## Conclusion
