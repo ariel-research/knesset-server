@@ -2,9 +2,33 @@ import xml2js from "xml2js";
 import {
   insertBillRow,
   insertKnessetMemberRow,
+  insertTypeValue,
   updateVoteId,
   addToVoteListRow,
+  getKnessetNumberAmount,
 } from "../config/database.js";
+
+
+const getParsedData = async (url) => {
+  try {
+    const response = await fetch(url);
+    if (!response) {
+      console.error("response problem");
+    }
+    const toXmlParser = await response.text();
+    if (!toXmlParser) {
+      console.error("break in xml parser");
+    }
+    const data = await xmlParser(toXmlParser);
+    if (!data) {
+      console.error("break in data");
+    }
+    return data;
+  } catch (err) {
+    console.error(err.message);
+    throw err;
+  }
+};
 
 export const xmlParser = (xml) => {
   return new Promise((resolve, reject) => {
@@ -24,41 +48,35 @@ const fetchBills = async (skip, knessetNum) => {
   const count = 100;
   while (true) {
     try {
-      const response = await fetch(
-        `${billUrl}?$filter=KnessetNum%20eq%20${knessetNum}&$skip=${skip}&count=${count}`
-      );
-      const xml = await response.text();
-      const result = await xmlParser(xml);
-      const entries = await result["feed"]["entry"];
-      if (!entries) {
+      const url = `${billUrl}?$filter=KnessetNum%20eq%20${knessetNum}&$skip=${skip}&count=${count}`;
+      const parsedData = await getParsedData(url);
+
+      if (!parsedData) {
         break; // All bills have been fetched
       }
+      if (!parsedData["feed"]["entry"]) {
+        break;
+      }
+      const entries = parsedData["feed"]["entry"];
       // Map the entries to an array of bill objects
       const bills = entries.map((entry) => {
+        const properties = entry["content"][0]["m:properties"][0];
         return {
-          billId: entry["content"][0]["m:properties"][0]["d:BillID"][0]["_"],
+          billId: properties["d:BillID"][0]["_"],
           name:
-            typeof entry["content"][0]["m:properties"][0]["d:Name"][0] ===
-            "string"
-              ? entry["content"][0]["m:properties"][0]["d:Name"][0]
-              : entry["content"][0]["m:properties"][0]["d:Name"][0]["_"],
-          knessetNum:
-            entry["content"][0]["m:properties"][0]["d:KnessetNum"][0]["_"],
+            typeof properties["d:Name"][0] === "string"
+              ? properties["d:Name"][0]
+              : properties["d:Name"][0]["_"],
+          knessetNum: properties["d:KnessetNum"][0]["_"],
         };
       });
-
       for (let bill of bills) {
-        await insertBillRow(
-          bill.billId,
-          bill.name,
-          bill.knessetNum,
-          bill.publishDate
-        );
+        await insertBillRow(bill.billId, bill.name, bill.knessetNum);
       } // Insert the bills into the database
       skip += count;
     } catch (err) {
       skip += count;
-      // console.error(err.message);
+      console.error(err.message);
       // Break out of the loop on error
     }
   }
@@ -69,8 +87,7 @@ const fetchBills = async (skip, knessetNum) => {
  * @param {*} res
  * @returns
  */
-export const getBillsByKnessetNum = async () => {
-  let knessetNum = 0;
+export const getBillsByKnessetNum = async (knessetNum) => {
   while (knessetNum <= 25) {
     await fetchBills(0, knessetNum);
     knessetNum++;
@@ -182,34 +199,29 @@ export const getKnessetMembers = async () => {
  * @param {*} res
  * @returns
  */
-export const getBillVoteIds = async () => {
-  let knessetNum = 0;
+export const getBillVoteIds = async (knessetNum) => {
   let skip = 0;
   let top = 100;
+
+  const baseUrl =
+    "https://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved";
   while (knessetNum <= 25) {
+    skip = 0;
     try {
-      skip = 0;
       while (true) {
-        const url = `https://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved?$filter=knesset_num%20eq%20${knessetNum}&$skip=${skip}&$top=${top}`;
-        const response = await fetch(url);
-        if (!response) {
-          console.error("Response PROBLEM");
-        }
-        const toXmlParser = await response.text();
-        if (!toXmlParser) {
-          console.error("XML PARSER PROBLEM");
-        }
-        const data = await xmlParser(toXmlParser);
+        const url = `${baseUrl}?$filter=knesset_num%20eq%20${knessetNum}&$skip=${skip}&$top=${top}`;
+        console.log(url);
+        const data = await getParsedData(url);
         const entries = data["feed"]["entry"];
         if (!entries) {
-          knessetNum += 1;
+          knessetNum = Number(knessetNum) + 1;
           break;
         }
         const voteIds = entries.map((entry) => {
+          const properties = entry["content"][0]["m:properties"][0];
           return {
-            sessionId:
-              entry["content"][0]["m:properties"][0]["d:sess_item_id"][0]["_"],
-            voteId: entry["content"][0]["m:properties"][0]["d:vote_id"][0]["_"],
+            sessionId: properties["d:sess_item_id"][0]["_"],
+            voteId: properties["d:vote_id"][0]["_"],
           };
         });
         for (let item of voteIds) {
@@ -228,47 +240,35 @@ export const getBillVoteIds = async () => {
 export const votesList = async (req, res) => {
   let skip = 0;
   let knessetNum = 0;
+  const baseUrl =
+    "https://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved";
   const top = 100;
   try {
     while (knessetNum <= 25) {
       skip += top;
       skip = 0;
       while (true) {
-        const url = `https://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved?$filter=knesset_num%20eq%20${knessetNum}&$skip=${skip}&$top=${top}`;
-        const response = await fetch(url);
-        if (!response) {
-          console.log("response problem");
-        }
-        const toXmlParser = await response.text();
-        if (!toXmlParser) {
-          console.log("break in xml parser");
-        }
-        const data = await xmlParser(toXmlParser);
-        console.log(data);
+        const url = `${baseUrl}?$filter=knesset_num%20eq%20${knessetNum}&$skip=${skip}&$top=${top}`;
+        const data = await getParsedData(url);
         if (!data) {
-          console.log("break in data");
           break;
         }
         const entries = data["feed"]["entry"];
-
         if (!entries) {
-          console.log("break in entries");
           break;
         }
         const voteIds = entries.map((entry) => {
+          const properties = entry["content"][0]["m:properties"][0];
+
           return {
-            VoteID: entry["content"][0]["m:properties"][0]["d:vote_id"][0]["_"],
-            BillID:
-              entry["content"][0]["m:properties"][0]["d:sess_item_id"][0]["_"],
-            VoteDate:
-              entry["content"][0]["m:properties"][0]["d:vote_date"][0]["_"],
-            against:
-              entry["content"][0]["m:properties"][0]["d:total_against"][0]["_"],
-            abstain:
-              entry["content"][0]["m:properties"][0]["d:total_abstain"][0]["_"],
-            knessetNum:
-              entry["content"][0]["m:properties"][0]["d:knesset_num"][0]["_"],
-            voteTime: entry["content"][0]["m:properties"][0]["d:vote_time"][0],
+            VoteID: properties["d:vote_id"][0]["_"],
+            BillID: properties["d:sess_item_id"][0]["_"],
+            VoteDate: properties["d:vote_date"][0]["_"],
+            against: properties["d:total_against"][0]["_"],
+            abstain: properties["d:total_abstain"][0]["_"],
+            knessetNum: properties["d:knesset_num"][0]["_"],
+            voteTime:
+              properties["content"][0]["m:properties"][0]["d:vote_time"][0],
           };
         });
         for (let voteElement of voteIds) {
@@ -291,5 +291,31 @@ export const votesList = async (req, res) => {
     return res
       .status(404)
       .json({ error: error.message, skip: skip, knessetNum: knessetNum });
+  }
+};
+export const getVoteTypes = async () => {
+  try {
+    const url = "https://knesset.gov.il/Odata/Votes.svc/vote_result_type";
+    const data = await getParsedData(url);
+
+    if (!data || !data["feed"] || !data["feed"]["entry"]) {
+      console.error("Invalid data structure:", data);
+      return; // Return or throw an error as needed
+    }
+
+    const entries = data["feed"]["entry"];
+    const typesValues = entries.map((entry) => {
+      entry = entry["content"][0]["m:properties"][0];
+      return {
+        typeId: entry["d:result_type_id"][0]["_"],
+        typeValue: entry["d:result_type_name"][0],
+      };
+    });
+    typesValues.forEach((element) => {
+      insertTypeValue(element);
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    // Handle the error appropriately
   }
 };

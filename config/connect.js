@@ -42,16 +42,17 @@ const createSchemaAndTables = () => {
 
         CREATE TABLE IF NOT EXISTS knesset.vote_types (
           TypeID INT NOT NULL,
-          TypeValue VARCHAR(45) NULL
+          TypeValue VARCHAR(45) NULL,
+          PRIMARY KEY (TypeID)
         );
 
         CREATE TABLE IF NOT EXISTS knesset.votes (
           VoteID INT NOT NULL,
           BillID VARCHAR(45) NULL,
           KnessetMemberID VARCHAR(45) NULL,
-          VoteValue VARCHAR(45) NULL,
-          PRIMARY KEY(VoteID)
+          VoteValue VARCHAR(45) NULL
         );
+        
         
         CREATE TABLE IF NOT EXISTS knesset.votes_list (
           VoteID INT NOT NULL,
@@ -59,8 +60,7 @@ const createSchemaAndTables = () => {
           VoteDate DATETIME NULL,
           TotalAgainst INT NULL,
           TotalAbstain INT NULL,
-          KnessetNum INT NULL,
-          PRIMARY KEY(VoteID)
+          KnessetNum INT NULL
         );
           
       `;

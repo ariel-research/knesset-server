@@ -1,6 +1,4 @@
-import { rejects } from "assert";
 import pool from "../config/connect.js";
-import { resolve } from "path";
 import { error } from "console";
 
 /**
@@ -91,17 +89,12 @@ export const insertKnessetMemberRow = async (
  * @param {*} knessetNum
  * @param {*} publishDate
  */
-export const insertBillRow = async (
-  billID,
-  billName,
-  knessetNum,
-  publishDate
-) => {
+export const insertBillRow = async (billID, billName, knessetNum) => {
   return new Promise(async (resolve, rejects) => {
     try {
       // Check if the bill already exists
-      const sqlQuery = `SELECT COUNT(*), BillID FROM bills WHERE BillID = ${billID}`;
-      pool.query(sqlQuery, (err, res) => {
+      const checkQuery = `SELECT COUNT(*), BillID FROM bills WHERE BillID = ?`;
+      pool.query(checkQuery, [billID], (err, res) => {
         if (err) {
           rejects(error);
         }
@@ -289,22 +282,18 @@ export const insertVoteForVotesRow = async (
           console.error("Error in insertVoteForVotesRow function");
           throw err;
         }
-        if (res[0]) {
-          if (res[0]["COUNT(*)"] === 0) {
-            const sql = `INSERT INTO votes(VoteID, BillID, KnessetMemberID, VoteValue) VALUES (${voteId}, ${billID}, ${memberID}, ${voteValue})`;
-            pool.query(sql, (err, res) => {
-              if (err) {
-                console.error(
-                  `Got some error with insertion vote of ${memberID}`
-                );
-                throw err;
-              }
-            });
-          }
-          // else {
-          //   console.log(`Already inserted vote_id:${voteId}`);
-          // }
+        if (res[0] && res[0]["COUNT(*)"] === 0) {
+          const sql = `INSERT INTO votes(VoteID, BillID, KnessetMemberID, VoteValue) VALUES (${voteId}, ${billID}, ${memberID}, ${voteValue})`;
+          pool.query(sql, (err, res) => {
+            if (err) {
+              console.error(`Got some error with insertion vote of ${voteId}`);
+              throw err;
+            }
+          });
         }
+        // else {
+        //   console.log(`Already inserted vote_id:${voteId}`);
+        // }
       }
     );
   } catch (err) {
@@ -408,4 +397,30 @@ export const getBillsByKnessetNumFromDB = (knessetNum) => {
       }
     );
   });
+};
+export const insertTypeValue = async (value) => {
+  const checkQuery = "SELECT COUNT(*) FROM vote_types WHERE TypeID = ?";
+  try {
+    pool.query(checkQuery, [parseInt(value.typeId)], (err, res) => {
+      if (err) {
+        console.error(err.message);
+        return;
+      }
+
+      if (!res && !res[0]["COUNT(*)"]) {
+        console.error("InsertTypeValue: Bad result from checkQuery");
+      }
+      if (res[0]["COUNT(*)"] === 0) {
+        const insertQuery =
+          "INSERT INTO vote_types (TypeID, TypeValue) VALUES (?, ?)";
+        pool.query(insertQuery, [value.typeId, value.typeValue], (err, res) => {
+          if (err) {
+            console.error(err.message);
+          }
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Error executing the query:", error);
+  }
 };

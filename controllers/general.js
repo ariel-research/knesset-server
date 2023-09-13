@@ -83,7 +83,6 @@ export const getVotes = async (req) => {
 
       /**Database checking before going to the knessetApi */
       if (voteExistsInDB) {
-        // console.log("voteExistInDB = TRUE");
         votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
 
         votesToClient.push(...votesFromDB);
@@ -93,12 +92,22 @@ export const getVotes = async (req) => {
       } else {
         console.log("voteExistsInDB: False");
         const url = `http://knesset.gov.il/Odata/Votes.svc/vote_rslts_kmmbr_shadow?$filter=vote_id%20eq%20${voteIdFromDB}`;
-        console.log(url);
         const response = await fetch(url);
-        console.log("Break function problem here?!?!?");
+        if (!response) {
+          console.error("Get Votes: Url Fetch ERROR");
+        }
         const toXmlParser = await response.text();
+        if (!toXmlParser) {
+          console.error("Get Votes: ToXmlParse ERROR");
+        }
         const data = await xmlParser(toXmlParser);
+        if (!data) {
+          console.error("Get Votes: data ERROR");
+        }
         const entries = data["feed"]["entry"];
+        if (!entries) {
+          console.error("Get Votes: entries ERROR");
+        }
         const votes = entries.map((entry) => {
           return {
             voteId: voteIdFromDB,
@@ -171,26 +180,30 @@ export const getScoresController = async (data) => {
         "error: getScoresController failed, 'user_votes' and 'bill_ids' should be an arrays",
     };
   }
-  if (user_votes.length !== bill_ids.length){
-    const error = "error: user_votes and bill_ids are not the same length."+ 
-                  " user_votes.length:" + user_votes.length + 
-                  " bill_ids.length:" + bill_ids.length;
+  if (user_votes.length !== bill_ids.length) {
+    const error =
+      "error: user_votes and bill_ids are not the same length." +
+      " user_votes.length:" +
+      user_votes.length +
+      " bill_ids.length:" +
+      bill_ids.length;
     console.log(error);
-    return {error};
+    return { error };
   }
 
   /* ---- get votes ---- */
   const billId_as_string = bill_ids.join(",");
   const bill_id_query = { query: { billId: billId_as_string } };
   const votes = await getVotes(bill_id_query);
+  console.log(votes);
 
   /* ---- getVotes - validate there are no errors ---- */
   if (votes == null) {
-    console.log("error: getVotes faild votes=:", votes);
+    console.log("error: getVotes failed votes=:", votes);
     return { error: "getVotes returned null value" };
   }
   if ("error" in votes) {
-    console.log("error: getVotes faild with error:", votes["error"]);
+    console.log("error: getVotes failed with error:", votes["error"]);
     return { error: votes["error"] };
   }
 
@@ -203,22 +216,21 @@ export const getScoresController = async (data) => {
   for (let index = 0; index < user_votes.length; index++) {
     let user_vote = user_votes[index];
     const bill_id = bill_ids[index];
-    if (user_vote !== 3){
-      if (user_vote === 1){
+    if (user_vote !== 3) {
+      if (user_vote === 1) {
         user_vote = true;
-      } else
-      if (user_vote === 2){
+      } else if (user_vote === 2) {
         user_vote = false;
-      } else{
+      } else {
         const error = "error: user_votes should be an array of integers, 1,2,3";
         console.log(error);
-        return {"error": error};
+        return { error: error };
       }
       user_boolean_votes_without_no_opinion.push(user_vote);
       user_bill_ids_without_no_opinion.push(bill_id);
     } else {
       // console.log("deleting from map");
-      if ( bill_id in map_without_no_opinion ){
+      if (bill_id in map_without_no_opinion) {
         delete map_without_no_opinion[bill_id];
         // console.log("bill id:", bill_id, "is deleted from map");
       }
@@ -229,7 +241,11 @@ export const getScoresController = async (data) => {
   // console.log("map_without_no_opinion:", Object.keys(map_without_no_opinion));
 
   /* --- gets the score ---- */
-  const scores = findScoresToMembers(user_bill_ids_without_no_opinion, user_boolean_votes_without_no_opinion, map_without_no_opinion);
+  const scores = findScoresToMembers(
+    user_bill_ids_without_no_opinion,
+    user_boolean_votes_without_no_opinion,
+    map_without_no_opinion
+  );
 
   /* ---- findScoresToMembers - validate there are no errors ---- */
   if (scores == null) {
@@ -237,10 +253,7 @@ export const getScoresController = async (data) => {
     return { error: "failed to get findScoresToMembers" };
   }
   if ("error" in scores) {
-    console.log(
-      "error: findScoresToMembers faild with error:",
-      scores
-    );
+    console.log("error: findScoresToMembers faild with error:", scores);
     console.log("bill_ids:", bill_ids);
     console.log("bill_ids length:", bill_ids.length);
     console.log("user_votes:", user_votes);
@@ -248,7 +261,7 @@ export const getScoresController = async (data) => {
     console.log("map1:", map1);
     console.log("map1 length:", Object.keys(map1).length);
 
-    return {error: scores};
+    return { error: scores };
   }
 
   /* ---- order the result ---- */
