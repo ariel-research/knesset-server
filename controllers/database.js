@@ -8,7 +8,6 @@ import {
   getKnessetNumberAmount,
 } from "../config/database.js";
 
-
 const getParsedData = async (url) => {
   try {
     const response = await fetch(url);
@@ -88,7 +87,7 @@ const fetchBills = async (skip, knessetNum) => {
  * @returns
  */
 export const getBillsByKnessetNum = async (knessetNum) => {
-  while (knessetNum <= 25) {
+  while (knessetNum <= process.env.LAST_KNESSET) {
     await fetchBills(0, knessetNum);
     knessetNum++;
   }
@@ -101,14 +100,11 @@ export const getBillsByKnessetNum = async (knessetNum) => {
 export const getKnessetMembers = async () => {
   let skip = 0;
   const pageSize = 100;
-  let hasMoreData = true;
+  const baseUrl = 'http://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition()?$filter=PositionID%20eq%2043%20or%20PositionID%20eq%2061&$expand=KNS_Person&$';
   try {
-    while (hasMoreData) {
-      const response = await fetch(
-        `http://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition()?$filter=PositionID%20eq%2043%20or%20PositionID%20eq%2061&$expand=KNS_Person&$skip=${skip}`
-      );
-      const xml = await response.text();
-      const result = await xmlParser(xml);
+    while (true) {
+      const url = `${baseUrl}skip=${skip}`;
+      const result = await getParsedData(url);
       if (!result) {
         console.error("xmlParser Error");
         res.status(404).json({
@@ -124,47 +120,24 @@ export const getKnessetMembers = async () => {
       const knessetMembers = entries.map((entry) => {
         try {
           if (
-            entry &&
-            entry["link"] &&
-            entry["link"][1] &&
-            entry["link"][1]["m:inline"] &&
-            entry["link"][1]["m:inline"][0] &&
-            entry["link"][1]["m:inline"][0]["entry"] &&
-            entry["link"][1]["m:inline"][0]["entry"][0] &&
-            entry["link"][1]["m:inline"][0]["entry"][0]["content"] &&
-            entry["link"][1]["m:inline"][0]["entry"][0]["content"][0] &&
-            entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
+            entry?.link?.[1]?.["m:inline"]?.[0]?.entry?.[0]?.content?.[0]?.[
               "m:properties"
             ]
           ) {
-            const id =
+            const properties =
               entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
                 "m:properties"
-              ][0]["d:PersonID"][0]["_"];
+              ][0];
+            const id = properties["d:PersonID"][0]["_"];
             const firstName =
-              typeof entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
-                "m:properties"
-              ][0]["d:FirstName"][0] === "string"
-                ? entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
-                    "m:properties"
-                  ][0]["d:FirstName"][0]
-                : entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
-                    "m:properties"
-                  ][0]["d:FirstName"][0]["_"];
+              typeof properties["d:FirstName"][0] === "string"
+                ? properties["d:FirstName"][0]
+                : properties["d:FirstName"][0]["_"];
             const lastName =
-              typeof entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
-                "m:properties"
-              ][0]["d:LastName"][0] == "string"
-                ? entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
-                    "m:properties"
-                  ][0]["d:LastName"][0]
-                : entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
-                    "m:properties"
-                  ][0]["d:LastName"][0]["_"];
-            const isActive =
-              entry["link"][1]["m:inline"][0]["entry"][0]["content"][0][
-                "m:properties"
-              ][0]["d:IsCurrent"][0]["_"];
+              typeof properties["d:LastName"][0] == "string"
+                ? properties["d:LastName"][0]
+                : properties["d:LastName"][0]["_"];
+            const isActive = properties["d:IsCurrent"][0]["_"];
             return {
               id,
               firstName,
@@ -205,7 +178,7 @@ export const getBillVoteIds = async (knessetNum) => {
 
   const baseUrl =
     "https://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved";
-  while (knessetNum <= 25) {
+  while (knessetNum <= process.env.LAST_KNESSET) {
     skip = 0;
     try {
       while (true) {
@@ -244,7 +217,7 @@ export const votesList = async (req, res) => {
     "https://knesset.gov.il/Odata/Votes.svc/View_vote_rslts_hdr_Approved";
   const top = 100;
   try {
-    while (knessetNum <= 25) {
+    while (knessetNum <= process.env.LAST_KNESSET) {
       skip += top;
       skip = 0;
       while (true) {
