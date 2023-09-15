@@ -90,45 +90,22 @@ export const insertKnessetMemberRow = async (
  * @param {*} publishDate
  */
 export const insertBillRow = async (billID, billName, knessetNum) => {
-  return new Promise(async (resolve, rejects) => {
-    try {
-      // Check if the bill already exists
-      const checkQuery = `SELECT COUNT(*), BillID FROM bills WHERE BillID = ?`;
-      pool.query(checkQuery, [billID], (err, res) => {
-        if (err) {
-          rejects(error);
-        }
-
-        if (res[0] && res[0]["COUNT(*)"] === 0) {
-          const billNameValidator = validate(billName);
-          const sql = `INSERT INTO bills(BillID, BillLabel, KnessetNum) VALUES (?, ?, ?)`;
-          pool.query(sql, [billID, billNameValidator, knessetNum]);
-        } else {
-          // Check if billName needs to be updated
-
-          const valid = validate(billName);
-          const updateNameQuery = `UPDATE bills SET name = ? WHERE id = ?`;
-          pool.query(updateNameQuery, [valid, billID]);
-
-          // Check if publishDate needs to be updated
-          // const billToUpdate = checkingResult.find(
-          //   (item) => item.id === billID && item.publish_date === null
-          // );
-          // if (billToUpdate) {
-          //   const modifiedDate = validDate(publishDate);
-          //   if (modifiedDate !== "") {
-          //     const updateQuery = `UPDATE bills SET PublishDate = ? WHERE BillID = ?`;
-          //     pool.query(updateQuery, [modifiedDate, billID]);
-          //   }
-          // }
-        }
-      });
-      resolve(); // Resolve the promise when done
-    } catch (err) {
-      console.error(`Error in insertBillRow: ${err.message}`);
-      rejects(err); // Reject the promise on error
+  try {
+    const notExist = await checkQuery("bills", "BillID", billID);
+    if (notExist) {
+      const billNameValidator = validate(billName);
+      const sql = `INSERT INTO bills(BillID, BillLabel, KnessetNum) VALUES (?, ?, ?)`;
+      pool.query(sql, [billID, billNameValidator, knessetNum]);
+    } else {
+      const valid = validate(billName);
+      const updateNameQuery = `UPDATE bills SET name = ? WHERE id = ?`;
+      pool.query(updateNameQuery, [valid, billID]);
     }
-  });
+    return; // Resolve the promise when done
+  } catch (err) {
+    console.error(`Error in insertBillRow: ${err.message}`);
+    return err; // Reject the promise on error
+  }
 };
 /**
  * Updating to the last vote of bill
@@ -136,35 +113,23 @@ export const insertBillRow = async (billID, billName, knessetNum) => {
  * @param {*} voteId
  */
 export const updateVoteId = async (billId, voteId) => {
-  return new Promise((resolve, reject) => {
-    try {
-      const search = `${SQL_CHECKING_QUERY} bills WHERE BillId = ${billId}`;
-      pool.query(search, (err, res) => {
+  try {
+    const query = await checkQuery("bills", "BillId", billId);
+    if (!query) {
+      const sql = "UPDATE bills SET VoteID = ? WHERE BillID = ?";
+      pool.query(sql, [voteId, billId], (err, res) => {
         if (err) {
-          console.error(`error: ${err}`);
-          reject(err); // Reject on error
+          console.error(err);
+          return err;
         }
-        if (res && res[0]["COUNT(*)"] === 0) {
-          // console.log(`The BillID ${billId} is not exist on bills table`);
-        } else {
-          const sql = `UPDATE bills SET VoteID = ${voteId} WHERE BillID = ${billId}`;
-          pool.query(sql, (err, res) => {
-            if (err) {
-              console.error(err);
-              reject(err); // Reject on error
-            } else {
-              // console.log(`Updated successfully vote_id to bill_id: ${billId}`);
-              resolve(); // Resolve on success
-            }
-          });
-        }
-        resolve();
+        return;
       });
-    } catch (err) {
-      console.error(`Failed to update property vote_id in ${billId}`);
-      reject(err); // Reject if an exception occurs
     }
-  });
+    return;
+  } catch (err) {
+    console.error(`Failed to update property vote_id in ${billId}`);
+    return err; // Reject if an exception occurs
+  }
 };
 
 /**
@@ -174,8 +139,8 @@ export const updateVoteId = async (billId, voteId) => {
  */
 export const getVoteId = async (billId) => {
   return new Promise((resolve, reject) => {
-    const sql = `SELECT VoteID FROM bills WHERE BillID = ${billId}`;
-    pool.query(sql, (err, res) => {
+    const sql = `SELECT VoteID FROM bills WHERE BillID = ?`;
+    pool.query(sql, [billId], (err, res) => {
       if (err) {
         console.error(
           `Failed in getVoteId function from config/database with Bill Id: ${billId}`
@@ -241,25 +206,12 @@ export const retrieveVotesFromDB = async (voteId) => {
  * @returns boolean
  */
 export const checkIfVoteExistInDB = async (voteId) => {
-  return new Promise((resolve, reject) => {
-    pool.query(
-      `${SQL_CHECKING_QUERY} votes WHERE VoteID = ${voteId}`,
-      (err, res) => {
-        // console.log(res);
-        if (err) {
-          console.error(
-            `checkIfVoteExistInDB COUNT function error with id: ${voteId}`
-          );
-          reject(err);
-        }
-        if (res && res[0]["COUNT(*)"] > 0) {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      }
-    );
-  });
+  const valid = !(await checkQuery("votes", "VoteID", voteId));
+  if (valid) {
+    return true;
+  } else {
+    return false;
+  }
 };
 /**
  *
@@ -275,30 +227,20 @@ export const insertVoteForVotesRow = async (
   voteValue
 ) => {
   try {
-    pool.query(
-      `${SQL_CHECKING_QUERY} votes WHERE VoteID = ${voteId}`,
-      (err, res) => {
+    const valid = await checkQuery("votes", "VoteID", voteId);
+    if (valid) {
+      const sql =
+        "INSERT INTO votes(VoteID, BillID, KnessetMemberID, VoteValue) VALUES (?,?,?,?)";
+      pool.query(sql, [voteId, billID, memberID, voteValue], (err, res) => {
         if (err) {
-          console.error("Error in insertVoteForVotesRow function");
-          throw err;
+          console.error(`Got some error with insertion vote of ${voteId}`);
+          return err;
         }
-        if (res[0] && res[0]["COUNT(*)"] === 0) {
-          const sql = `INSERT INTO votes(VoteID, BillID, KnessetMemberID, VoteValue) VALUES (${voteId}, ${billID}, ${memberID}, ${voteValue})`;
-          pool.query(sql, (err, res) => {
-            if (err) {
-              console.error(`Got some error with insertion vote of ${voteId}`);
-              throw err;
-            }
-          });
-        }
-        // else {
-        //   console.log(`Already inserted vote_id:${voteId}`);
-        // }
-      }
-    );
+      });
+    }
   } catch (err) {
     console.error(err);
-    throw err;
+    return err;
   }
 };
 /**
@@ -341,6 +283,29 @@ export const getBillsFromDatabase = () => {
     }
   });
 };
+
+const checkQuery = (table, checkColumn, checkValue) => {
+  return new Promise((resolve, rejects) => {
+    const query = `SELECT COUNT(*) FROM ${table} where ${checkColumn} = ?`;
+    pool.query(query, [checkValue], (err, res) => {
+      if (err) {
+        console.error("checkQuery:", err.message);
+        rejects(err);
+      }
+      if (!res || !res[0]) {
+        console.log(res);
+        console.error("checkQuery: res callback not found");
+        rejects(res);
+      }
+      if (res[0]["COUNT(*)"] === 0) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    });
+  });
+};
+
 export const addToVoteListRow = async (
   voteId,
   billId,
@@ -351,29 +316,19 @@ export const addToVoteListRow = async (
   voteTime
 ) => {
   try {
-    pool.query(
-      `${SQL_CHECKING_QUERY} votes_list WHERE VoteID = ${voteId}`,
-      async (err, res) => {
-        if (err) {
-          console.error("Error in insertVoteForBillRow function");
-          throw err;
-        }
-        if (res[0]) {
-          if (res[0]["COUNT(*)"] === 0) {
-            const date = await validDate(voteDate, voteTime);
-            pool.query(
-              `INSERT INTO votes_list(VoteID, BillID, VoteDate, TotalAgainst, TotalAbstain, KnessetNum) VALUES (${voteId}, ${billId}, '${date}', ${against}, ${abstain},${knessetNum})`,
-              (err, res) => {
-                if (err) {
-                  console.error(`Got some error with VoteID: ${voteId}`);
-                  throw err;
-                }
-              }
-            );
+    const valid = await checkQuery("votes_list", "VoteID", voteId);
+    if (valid) {
+      const date = await validDate(voteDate, voteTime);
+      pool.query(
+        `INSERT INTO votes_list(VoteID, BillID, VoteDate, TotalAgainst, TotalAbstain, KnessetNum) VALUES (${voteId}, ${billId}, '${date}', ${against}, ${abstain},${knessetNum})`,
+        (err, res) => {
+          if (err) {
+            console.error(`Got some error with VoteID: ${voteId}`);
+            throw err;
           }
         }
-      }
-    );
+      );
+    }
   } catch (error) {
     console.error(error);
     throw error;

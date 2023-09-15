@@ -48,6 +48,7 @@ const fetchBills = async (skip, knessetNum) => {
   while (true) {
     try {
       const url = `${billUrl}?$filter=KnessetNum%20eq%20${knessetNum}&$skip=${skip}&count=${count}`;
+      console.log(url);
       const parsedData = await getParsedData(url);
 
       if (!parsedData) {
@@ -73,6 +74,7 @@ const fetchBills = async (skip, knessetNum) => {
         await insertBillRow(bill.billId, bill.name, bill.knessetNum);
       } // Insert the bills into the database
       skip += count;
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (err) {
       skip += count;
       console.error(err.message);
@@ -100,7 +102,8 @@ export const getBillsByKnessetNum = async (knessetNum) => {
 export const getKnessetMembers = async () => {
   let skip = 0;
   const pageSize = 100;
-  const baseUrl = 'http://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition()?$filter=PositionID%20eq%2043%20or%20PositionID%20eq%2061&$expand=KNS_Person&$';
+  const baseUrl =
+    "http://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition()?$filter=PositionID%20eq%2043%20or%20PositionID%20eq%2061&$expand=KNS_Person&$";
   try {
     while (true) {
       const url = `${baseUrl}skip=${skip}`;
@@ -201,16 +204,20 @@ export const getBillVoteIds = async (knessetNum) => {
           await updateVoteId(item.sessionId, item.voteId);
         }
         skip = skip + top;
+
+        // Add a one-second delay here
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     } catch (error) {
-      // console.error(error.message + "skip: ", skip);
+      // Handle errors here
+      console.error(error.message + "skip: ", skip);
       skip = skip + top;
 
       // return res.status(404).json({ error: error.message });
     }
   }
 };
-export const votesList = async (req, res) => {
+export const votesList = async () => {
   let skip = 0;
   let knessetNum = 0;
   const baseUrl =
@@ -240,8 +247,7 @@ export const votesList = async (req, res) => {
             against: properties["d:total_against"][0]["_"],
             abstain: properties["d:total_abstain"][0]["_"],
             knessetNum: properties["d:knesset_num"][0]["_"],
-            voteTime:
-              properties["content"][0]["m:properties"][0]["d:vote_time"][0],
+            voteTime: properties["d:vote_time"][0],
           };
         });
         for (let voteElement of voteIds) {
@@ -256,14 +262,12 @@ export const votesList = async (req, res) => {
           );
         }
         skip += top;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
       knessetNum += 1;
     }
-    return res.status(202).json({ result: "Success" });
-  } catch (error) {
-    return res
-      .status(404)
-      .json({ error: error.message, skip: skip, knessetNum: knessetNum });
+  } catch (err) {
+    console.error(err);
   }
 };
 export const getVoteTypes = async () => {
