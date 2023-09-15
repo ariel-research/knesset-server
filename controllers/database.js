@@ -5,7 +5,6 @@ import {
   insertTypeValue,
   updateVoteId,
   addToVoteListRow,
-  getKnessetNumberAmount,
 } from "../config/database.js";
 
 const getParsedData = async (url) => {
@@ -74,7 +73,7 @@ const fetchBills = async (skip, knessetNum) => {
         await insertBillRow(bill.billId, bill.name, bill.knessetNum);
       } // Insert the bills into the database
       skip += count;
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (err) {
       skip += count;
       console.error(err.message);
@@ -109,10 +108,8 @@ export const getKnessetMembers = async () => {
       const url = `${baseUrl}skip=${skip}`;
       const result = await getParsedData(url);
       if (!result) {
-        console.error("xmlParser Error");
-        res.status(404).json({
-          error: "Xml Parser Error",
-        });
+        console.error("getKnessetMembersError: result error");
+        return "getKnessetMembersError: result error";
       }
       const entries = result["feed"]["entry"];
       if (!entries) {
@@ -166,6 +163,7 @@ export const getKnessetMembers = async () => {
     // return res.status(404).json({ error: error.message });
   } catch (error) {
     console.error("get knessetMembers function: ", error.message);
+    return `get knessetMembers function:  ${error.message}`;
   }
   console.log("Knesset members loaded successfully.!");
 };
@@ -206,7 +204,7 @@ export const getBillVoteIds = async (knessetNum) => {
         skip = skip + top;
 
         // Add a one-second delay here
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     } catch (error) {
       // Handle errors here
@@ -262,7 +260,7 @@ export const votesList = async () => {
           );
         }
         skip += top;
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
       knessetNum += 1;
     }
