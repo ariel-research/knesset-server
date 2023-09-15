@@ -34,7 +34,7 @@ npm install
    
 ![image](https://github.com/Political-Transparency/server/assets/73185009/d9341117-76c1-416c-8085-e921e48bc6fb)
 
-The **START_KNESSET** and **LAST_KNESSET** environment variables act as controls to fine-tune the script's execution pace, granting users the ability to precisely orchestrate their API queries to the Knesset API. By default, **START_KNESSET** is set to 1, and **LAST_KNESSET** is set to 25, establishing the initial parameters for the API query range.
+The **START_KNESSET** and **LAST_KNESSET** environment variables act as controls to fine-tune the script's execution pace, granting users the ability to precisely orchestrate their API queries to the Knesset API. By default, in the .env.example file **START_KNESSET** is set to 1, and **LAST_KNESSET** is set to 25, establishing the initial parameters for the API query range.
 
 <b>Note:<b> .env file should be in a common file for client and server repos.
    
