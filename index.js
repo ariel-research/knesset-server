@@ -67,7 +67,7 @@ app.get("/scores", async (req, res) => {
 
   /* validate there are no errors in getVotes */
   if ("error" in votes) {
-    console.log("error: getVotes faild with error:", votes["error"]);
+    console.log("error: getVotes failed with error:", votes["error"]);
     res.send({ error: votes["error"] }).json;
   }
 
