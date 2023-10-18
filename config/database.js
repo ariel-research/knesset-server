@@ -348,11 +348,14 @@ export const getBillsByKnessetNumFromDB = (knessetNum) => {
           name: row.BillLabel,
           id: row.BillID,
         }));
-        resolve({ bills });
+        // console.log(bills);
+        resolve( {bills} );
       }
     );
   });
 };
+
+
 export const insertTypeValue = async (value) => {
   const checkQuery = "SELECT COUNT(*) FROM vote_types WHERE TypeID = ?";
   try {
