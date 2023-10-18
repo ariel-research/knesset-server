@@ -6,6 +6,8 @@ import bodyParser from "body-parser";
 import generalRoutes from "./routes/general.js";
 import databaseRoutes from "./routes/database.js";
 import morgan from "morgan";
+import https from "https";
+import fs from "fs";
 
 import { getVotes, getBillsData } from "./controllers/general.js";
 
@@ -171,12 +173,16 @@ export const parseVotes = async (votes) => {
 
   return map1;
 };
-
+const options = {
+  key: fs.readFileSync("server.key"),
+  cert: fs.readFileSync("server.cert"),
+};
 const port = process.env.SERVER_PORT ?? 8080;
-app.listen(port, () => {
-  console.log(`Server is listening at http://localhost:${port}`);
+https.createServer(options, app).listen(port, (req,res) => {
   initializedDatabase();
   scriptStarter();
-});
+  console.log(`Server started at port ${port}`); 
+
+})
 
 export default parseVotes;
