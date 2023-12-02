@@ -2,6 +2,12 @@ const AVOID = [3, 4];
 const PRO = 1;
 const CON = 2;
 
+const PRO_STRING = "בעד";
+const AGAINST_STRING = "נגד";
+const NEUTRAL_STRING = "נמנע";
+const PRO_INT = 1;
+const AGAINST_INT = 2;
+const NEUTRAL_VOTE = 3;
 /**
  * Finds the score of each Knesset member in relation to what the user chose.
  * @param {Array} bill_ids_list         list of bill IDs.
@@ -21,9 +27,9 @@ export const findScoresToMembers = (
   /* check if len are equals and not zero | bill_ids_list | user_vote_list | members_vote_object.keys | */
 
   if (
-    bill_ids_list.length !== user_vote_list.length
-    || user_vote_list.length !== Object.keys(members_vote_object).length 
-    // || bill_ids_list.length === 0 // bill_ids_list could be an empty list in case the user votes only AVOID. 
+    bill_ids_list.length !== user_vote_list.length ||
+    user_vote_list.length !== Object.keys(members_vote_object).length
+    // || bill_ids_list.length === 0 // bill_ids_list could be an empty list in case the user votes only AVOID.
   ) {
     // console.log("checking" ,(bill_ids_list.length === user_vote_list.length) && user_vote_list.length === Object.keys(members_vote_object).length)
     // console.log("bill_ids_list.length === 0", bill_ids_list.length === 0)
@@ -31,7 +37,13 @@ export const findScoresToMembers = (
     // console.log("user_vote_list.length", user_vote_list.length)
     // console.log("Object.keys(members_vote_object).length", Object.keys(members_vote_object).length)
     // throw new TypeError(); // throws en error
-    return { error: "data length error","bill_ids_list.length": bill_ids_list.length, "user_vote_list.length": user_vote_list.length, "Object.keys(members_vote_object).length":Object.keys(members_vote_object).length };
+    return {
+      error: "data length error",
+      "bill_ids_list.length": bill_ids_list.length,
+      "user_vote_list.length": user_vote_list.length,
+      "Object.keys(members_vote_object).length":
+        Object.keys(members_vote_object).length,
+    };
   }
   /**  for all bill_id in bill_ids_list:
    *     for all member, vote in items:
@@ -97,4 +109,17 @@ const getPair = (member_id, vote) => {
 //                      }
 // const res = findScoresToMembers([1,2], [true, false], member_votes)
 // console.log(res)
+
+export const voteStringToInt = (vote) => {
+  switch (vote) {
+    case PRO_STRING:
+      return PRO_INT;
+    case AGAINST_STRING:
+      return AGAINST_INT;
+    case NEUTRAL_STRING:
+      return NEUTRAL_VOTE;
+    default:
+      return NEUTRAL_VOTE;
+  }
+};
 export default findScoresToMembers;

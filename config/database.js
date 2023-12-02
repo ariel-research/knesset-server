@@ -1,5 +1,4 @@
 import pool from "../config/connect.js";
-import { error } from "console";
 
 /**
  * A valid structure for bill label using regex for replacing multiple invalid characters.
@@ -87,37 +86,154 @@ export const insertKnessetMemberRow = async (
  * @param {*} billID
  * @param {*} billName
  * @param {*} knessetNum
- * @param {*} publishDate
  */
+export const insertBatchBills = async (rows) => {
+  pool.getConnection(function (err, connection) {
+    connection.beginTransaction(function (err) {
+      if (err) {
+        //Transaction Error (Rollback and release connection)
+        connection.rollback(function () {
+          connection.release();
+          //Failure
+        });
+      } else {
+        const values = rows.map(({ billId, billName, knessetNum, voteId }) => [
+          billId,
+          validate(billName),
+          knessetNum,
+          voteId,
+        ]);
+        const sql = `INSERT INTO bills(billID, billName, knessetNum, voteID) VALUES ?
+      ON DUPLICATE KEY UPDATE billName = VALUES(billName)`;
+        connection.query(sql, [values], function (err, results) {
+          if (err) {
+            //Query Error (Rollback and release connection)
+            connection.rollback(function () {
+              connection.release();
+              //Failure
+            });
+          } else {
+            connection.commit(function (err) {
+              if (err) {
+                connection.rollback(function () {
+                  connection.release();
+                  //Failure
+                });
+              } else {
+                connection.release();
+                //Success
+              }
+            });
+          }
+        });
+      }
+    });
+  });
+};
 export const insertBillRow = async (billID, billName, knessetNum) => {
   try {
-    const notExist = await checkQuery("bills", "BillID", billID);
-    if (notExist) {
-      const billNameValidator = validate(billName);
-      const sql = `INSERT INTO bills(BillID, BillLabel, KnessetNum) VALUES (?, ?, ?)`;
-      pool.query(sql, [billID, billNameValidator, knessetNum]);
-    } else {
-      const valid = validate(billName);
-      const updateNameQuery = `UPDATE bills SET name = ? WHERE id = ?`;
-      pool.query(updateNameQuery, [valid, billID]);
-    }
+    const billNameValidator = validate(billName);
+
+    const sql = `
+      INSERT INTO bills(billID, billName, knessetNum)
+      VALUES (?, ?, ?)
+      ON DUPLICATE KEY UPDATE billName = VALUES(billName)
+    `;
+
+    await pool.query(sql, [billID, billNameValidator, knessetNum]);
+
     return; // Resolve the promise when done
   } catch (err) {
     console.error(`Error in insertBillRow: ${err.message}`);
     return err; // Reject the promise on error
   }
 };
+// export const insertBatchBills = async (rows) => {
+//   pool.getConnection((err, connection) => {
+//     connection.beginTransaction((err) => {
+//       if (err) {
+//         console.error(`beginTransaction Error: ${err.message} `);
+//         throw err;
+//       }
+//       const values = rows.map(({ billId, billName, knessetNum, voteId }) => [
+//         billId,
+//         validate(billName),
+//         knessetNum,
+//         voteId,
+//       ]);
+
+//       const sql = `INSERT INTO bills(billID, billName, knessetNum, voteID) VALUES ?
+//                    ON DUPLICATE KEY UPDATE billName = VALUES(billName)`;
+//       connection.query(sql, [values], (error, results, fields) => {
+//         if (error) {
+//           connection.rollback(() => {
+//             connection.release();
+//             throw error;
+//           });
+//         }
+//         connection.commit(function (err) {
+//           if (err) {
+//             connection.rollback(function () {
+//               connection.release();
+//               throw err;
+//             });
+//           }
+//           connection.release();
+//         });
+//       });
+//     });
+//   });
+// };
+export const insertBatchVotes = async (rows) => {
+  pool.getConnection((err, connection) => {
+    connection.beginTransaction((err) => {
+      if (err) {
+        console.error(`beginTransaction Error: ${err.message} `);
+        connection.release();
+        throw err;
+      }
+      const values = rows.map(
+        ({ voteId, billId, knessetMemberId, voteValue }) => [
+          voteId,
+          billId,
+          knessetMemberId,
+          voteValue,
+        ]
+      );
+      const sql =
+        "INSERT INTO votes (voteID, billID, knessetMemberID, voteValue) VALUES ?";
+      connection.query(sql, [values], (error, results, fields) => {
+        if (error) {
+          connection.rollback(function () {
+            connection.release();
+            throw error;
+          });
+        }
+        connection.commit(function (err) {
+          if (err) {
+            connection.rollback(function () {
+              connection.release();
+              throw err;
+            });
+          }
+          connection.release();
+        });
+      });
+    });
+  });
+};
+
 /**
  * Updating to the last vote of bill
- * @param {*} billId
- * @param {*} voteId
+ * @param {*} billID
+ * @param {*} voteID
  */
-export const updateVoteId = async (billId, voteId) => {
+export const updateVoteId = async (billID, voteID) => {
   try {
-    const query = await checkQuery("bills", "BillId", billId);
+    const query = await checkQuery("bills", "billID", billID);
     if (!query) {
-      const sql = "UPDATE bills SET VoteID = ? WHERE BillID = ?";
-      pool.query(sql, [voteId, billId], (err, res) => {
+      const sql = "UPDATE bills SET voteID = ? WHERE billID = ?";
+      pool.query(sql, [voteID, billID], (err, res) => {
         if (err) {
           console.error(err);
           return err;
@@ -127,28 +243,28 @@ export const updateVoteId = async (billId, voteId) => {
     }
     return;
   } catch (err) {
-    console.error(`Failed to update property vote_id in ${billId}`);
+    console.error(`Failed to update property vote_id in ${billID}`);
     return err; // Reject if an exception occurs
   }
 };
 
 /**
  * If the voteID exists in the database this function will return the voteID as Number
- * @param {*} billId
+ * @param {*} billID
  * @returns Number
  */
-export const getVoteId = async (billId) => {
+export const getVoteId = async (billID) => {
   return new Promise((resolve, reject) => {
-    const sql = `SELECT VoteID FROM bills WHERE BillID = ?`;
-    pool.query(sql, [billId], (err, res) => {
+    const sql = `SELECT voteID FROM bills WHERE billID = ?`;
+    pool.query(sql, [billID], (err, res) => {
       if (err) {
         console.error(
-          `Failed in getVoteId function from config/database with Bill Id: ${billId}`
+          `Failed in getVoteID function from config/database with Bill Id: ${billID}`
         );
         reject(err);
       } else {
-        const voteId = res[0].VoteID; // Assuming the vote_id is present in the first row of the result
-        resolve(voteId);
+        const voteID = res[0].voteID; // Assuming the vote_id is present in the first row of the result
+        resolve(voteID);
       }
     });
   });
@@ -156,7 +272,7 @@ export const getVoteId = async (billId) => {
 export const getKnessetNumberAmount = async () => {
   return new Promise((resolve, reject) => {
     pool.query(
-      `SELECT KnessetNum FROM bills GROUP BY KnessetNum ORDER BY KnessetNum`,
+      `SELECT knessetNum FROM bills GROUP BY knessetNum ORDER BY knessetNum`,
       (err, res) => {
         if (err) {
           console.error(err);
@@ -170,26 +286,26 @@ export const getKnessetNumberAmount = async () => {
 /**
  * Function to retrieve votes using complex MySql query to connect between the table,
  * and return the payload to the server.
- * @param {*} voteId
+ * @param {*} voteID
  * @returns
  */
-export const retrieveVotesFromDB = async (voteId) => {
+export const retrieveVotesFromDB = async (voteID) => {
   return new Promise((resolve, reject) => {
     pool.query(
-      `SELECT bills.BillID, bills.BillLabel, knesset_members.MemberID, knesset_members.FullName, vote_types.TypeID
+      `SELECT bills.billID, bills.billName, knesset_members.MemberID, knesset_members.FullName, vote_types.TypeID
       FROM bills
-      INNER JOIN votes ON votes.VoteID = bills.VoteID
+      INNER JOIN votes ON votes.voteID = bills.voteID
       INNER JOIN knesset_members ON knesset_members.MemberID = votes.KnessetMemberID
       INNER JOIN vote_types ON vote_types.TypeID = votes.VoteValue
-      WHERE votes.VoteID = ${voteId};`,
+      WHERE votes.voteID = ${voteID};`,
       (err, res) => {
         if (err) {
           console.error("checkIfVoteExistInDB Retrieve votes table error");
           reject(err);
         } else {
           const votes = res.map((row) => ({
-            BillID: row.BillID,
-            BillLabel: row.BillLabel,
+            billID: row.billID,
+            billName: row.billName,
             KnessetMemberId: row.MemberID,
             KnessetMemberName: row.FullName,
             TypeValue: row.TypeID,
@@ -202,11 +318,11 @@ export const retrieveVotesFromDB = async (voteId) => {
 };
 /**
  * Function that's check if voteID is exists on the votes table.
- * @param {*} voteId
+ * @param {*} voteID
  * @returns boolean
  */
-export const checkIfVoteExistInDB = async (voteId) => {
-  const valid = !(await checkQuery("votes", "VoteID", voteId));
+export const checkIfVoteExistInDB = async (voteID) => {
+  const valid = !(await checkQuery("votes", "voteID", voteID));
   if (valid) {
     return true;
   } else {
@@ -215,25 +331,29 @@ export const checkIfVoteExistInDB = async (voteId) => {
 };
 /**
  *
- * @param {*} voteId
+ * @param {*} voteID
  * @param {*} billID
  * @param {*} memberID
  * @param {*} voteValue
  */
+export const isBillNotExistInDB = async (billID) => {
+  return await checkQuery("bills", "billID", billID);
+};
+
 export const insertVoteForVotesRow = async (
-  voteId,
+  voteID,
   billID,
   memberID,
   voteValue
 ) => {
   try {
-    const valid = await checkQuery("votes", "VoteID", voteId);
+    const valid = await checkQuery("votes", "voteID", voteID);
     if (valid) {
       const sql =
-        "INSERT INTO votes(VoteID, BillID, KnessetMemberID, VoteValue) VALUES (?,?,?,?)";
-      pool.query(sql, [voteId, billID, memberID, voteValue], (err, res) => {
+        "INSERT INTO votes(voteID, billID, KnessetMemberID, VoteValue) VALUES (?,?,?,?)";
+      pool.query(sql, [voteID, billID, memberID, voteValue], (err, res) => {
         if (err) {
-          console.error(`Got some error with insertion vote of ${voteId}`);
+          console.error(`Got some error with insertion vote of ${voteID}`);
           return err;
         }
       });
@@ -250,7 +370,7 @@ export const insertVoteForVotesRow = async (
 export const getNumOfBillsWithVotes = async () => {
   return new Promise((resolve, reject) => {
     try {
-      pool.query("SELECT COUNT(*) FROM bills WHERE VoteID", (err, res) => {
+      pool.query("SELECT COUNT(*) FROM bills WHERE voteID", (err, res) => {
         if (err) reject(err);
         const resCount = res[0]["COUNT(*)"];
         resolve(resCount);
@@ -263,16 +383,16 @@ export const getNumOfBillsWithVotes = async () => {
 export const getBillsFromDatabase = () => {
   return new Promise((resolve, reject) => {
     try {
-      pool.query("SELECT * FROM bills WHERE VoteID", (error, results) => {
+      pool.query("SELECT * FROM bills WHERE voteID", (error, results) => {
         if (error) {
           reject(error);
         }
 
         // Transform the results into an array
         const data = results.map((row) => ({
-          id: row.BillID,
-          label: row.BillLabel,
-          knessetNum: row.KnessetNum,
+          id: row.billID,
+          label: row.billName,
+          knessetNum: row.knessetNum,
         }));
 
         // Return the data as a JSON array
@@ -286,29 +406,34 @@ export const getBillsFromDatabase = () => {
 
 const checkQuery = (table, checkColumn, checkValue) => {
   return new Promise((resolve, rejects) => {
-    const query = `SELECT COUNT(*) FROM ${table} where ${checkColumn} = ?`;
-    pool.query(query, [checkValue], (err, res) => {
-      if (err) {
-        console.error("checkQuery:", err.message);
-        rejects(err);
-      }
-      if (!res || !res[0]) {
-        console.log(res);
-        console.error("checkQuery: res callback not found");
-        rejects(res);
-      }
-      if (res[0]["COUNT(*)"] === 0) {
-        resolve(true);
-      } else {
-        resolve(false);
-      }
-    });
+    try {
+      const query = `SELECT COUNT(*) FROM ${table} where ${checkColumn} = ?`;
+      pool.query(query, [checkValue], (err, res) => {
+        if (err) {
+          console.error("checkQuery:", err.message);
+          rejects(err);
+        }
+        if (!res || !res[0]) {
+          console.log(res);
+          console.error("checkQuery: res callback not found");
+          rejects(res);
+        }
+        if (res && res[0]["COUNT(*)"] === 0) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      });
+    } catch (error) {
+      console.log(error.message);
+      throw err;
+    }
   });
 };
 
 export const addToVoteListRow = async (
-  voteId,
-  billId,
+  voteID,
+  billID,
   voteDate,
   against,
   abstain,
@@ -316,14 +441,14 @@ export const addToVoteListRow = async (
   voteTime
 ) => {
   try {
-    const valid = await checkQuery("votes_list", "VoteID", voteId);
+    const valid = await checkQuery("votes_list", "voteID", voteID);
     if (valid) {
       const date = await validDate(voteDate, voteTime);
       pool.query(
-        `INSERT INTO votes_list(VoteID, BillID, VoteDate, TotalAgainst, TotalAbstain, KnessetNum) VALUES (${voteId}, ${billId}, '${date}', ${against}, ${abstain},${knessetNum})`,
+        `INSERT INTO votes_list(voteID, billID, VoteDate, TotalAgainst, TotalAbstain, knessetNum) VALUES (${voteID}, ${billID}, '${date}', ${against}, ${abstain},${knessetNum})`,
         (err, res) => {
           if (err) {
-            console.error(`Got some error with VoteID: ${voteId}`);
+            console.error(`Got some error with voteID: ${voteID}`);
             throw err;
           }
         }
@@ -337,7 +462,7 @@ export const addToVoteListRow = async (
 export const getBillsByKnessetNumFromDB = (knessetNum) => {
   return new Promise((resolve, reject) => {
     pool.query(
-      `SELECT * FROM bills WHERE VoteID AND KnessetNum = ?`,
+      `SELECT * FROM bills WHERE voteID AND knessetNum = ?`,
       [knessetNum],
       function (error, results, fields) {
         if (error) {
@@ -345,16 +470,15 @@ export const getBillsByKnessetNumFromDB = (knessetNum) => {
         }
 
         const bills = results.map((row) => ({
-          name: row.BillLabel,
-          id: row.BillID,
+          name: row.billName,
+          id: row.billID,
         }));
         // console.log(bills);
-        resolve( {bills} );
+        resolve({ bills });
       }
     );
   });
 };
-
 
 export const insertTypeValue = async (value) => {
   const checkQuery = "SELECT COUNT(*) FROM vote_types WHERE TypeID = ?";

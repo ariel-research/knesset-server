@@ -61,7 +61,7 @@ const fetchBills = async (skip, knessetNum) => {
       const bills = entries.map((entry) => {
         const properties = entry["content"][0]["m:properties"][0];
         return {
-          billId: properties["d:BillID"][0]["_"],
+          billID: properties["d:billID"][0]["_"],
           name:
             typeof properties["d:Name"][0] === "string"
               ? properties["d:Name"][0]
@@ -70,7 +70,7 @@ const fetchBills = async (skip, knessetNum) => {
         };
       });
       for (let bill of bills) {
-        await insertBillRow(bill.billId, bill.name, bill.knessetNum);
+        await insertBillRow(bill.billID, bill.name, bill.knessetNum);
       } // Insert the bills into the database
       skip += count;
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -195,11 +195,11 @@ export const getBillVoteIds = async (knessetNum) => {
           const properties = entry["content"][0]["m:properties"][0];
           return {
             sessionId: properties["d:sess_item_id"][0]["_"],
-            voteId: properties["d:vote_id"][0]["_"],
+            voteID: properties["d:vote_id"][0]["_"],
           };
         });
         for (let item of voteIds) {
-          await updateVoteId(item.sessionId, item.voteId);
+          await updateVoteId(item.sessionId, item.voteID);
         }
         skip = skip + top;
 
@@ -239,8 +239,8 @@ export const votesList = async () => {
           const properties = entry["content"][0]["m:properties"][0];
 
           return {
-            VoteID: properties["d:vote_id"][0]["_"],
-            BillID: properties["d:sess_item_id"][0]["_"],
+            voteID: properties["d:vote_id"][0]["_"],
+            billID: properties["d:sess_item_id"][0]["_"],
             VoteDate: properties["d:vote_date"][0]["_"],
             against: properties["d:total_against"][0]["_"],
             abstain: properties["d:total_abstain"][0]["_"],
@@ -250,8 +250,8 @@ export const votesList = async () => {
         });
         for (let voteElement of voteIds) {
           await addToVoteListRow(
-            voteElement.VoteID,
-            voteElement.BillID,
+            voteElement.voteID,
+            voteElement.billID,
             voteElement.VoteDate,
             voteElement.against,
             voteElement.abstain,

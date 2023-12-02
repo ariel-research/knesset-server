@@ -16,7 +16,7 @@ import { findScoresToMembers } from "../Utils/localUtils.js";
 // const validate = (billUserOpinion) => {
 //   const possibleValue = [1, -1];
 //   const billIds = billUserOpinion.map((element) => {
-//     element.billId;
+//     element.billID;
 //   });
 //   const userOpinions = billUserOpinion.map((element) => {
 //     element.opinionValue;
@@ -63,12 +63,12 @@ const billIdsWithoutDuplicates = async (billIds) => {
 };
 export const getVotes = async (req) => {
   try {
-    const { billId } = req.query;
-    console.log(billId);
-    if (!billId || billId === "") {
+    const { billID } = req.query;
+    console.log(billID);
+    if (!billID || billID === "") {
       return null;
     }
-    const billIds = billId.split(",");
+    const billIds = billID.split(",");
     const setOfBillIds = await billIdsWithoutDuplicates(billIds);
     const votesToInsert = [];
     const votesToClient = [];
@@ -110,8 +110,8 @@ export const getVotes = async (req) => {
         }
         const votes = entries.map((entry) => {
           return {
-            voteId: voteIdFromDB,
-            BillId: id,
+            voteID: voteIdFromDB,
+            billID: id,
             knessetMemberId: Number(
               entry["content"][0]["m:properties"][0]["d:kmmbr_id"]
             ),
@@ -123,8 +123,8 @@ export const getVotes = async (req) => {
 
         for (let vote of votesToInsert) {
           await insertVoteForVotesRow(
-            vote.voteId,
-            vote.BillId,
+            vote.voteID,
+            vote.billID,
             vote.knessetMemberId,
             vote.voteValue
           );
@@ -193,7 +193,7 @@ export const getScoresController = async (data) => {
 
   /* ---- get votes ---- */
   const billId_as_string = bill_ids.join(",");
-  const bill_id_query = { query: { billId: billId_as_string } };
+  const bill_id_query = { query: { billID: billId_as_string } };
   const votes = await getVotes(bill_id_query);
   console.log(votes);
 
@@ -298,8 +298,8 @@ export const getScoresController = async (data) => {
 const billId2BillName = (votes) => {
   const visited = {};
   votes.forEach((element) => {
-    const bill_id = element.BillID;
-    const bill_name = element.BillLabel;
+    const bill_id = element.billID;
+    const bill_name = element.billName;
 
     if (!(bill_id in visited)) {
       visited[bill_id] = { bill_id: bill_id, bill_name: bill_name };
@@ -337,19 +337,19 @@ export const parseVotes = async (votes) => {
   const awaitedVotes = await votes;
 
   awaitedVotes.forEach((element) => {
-    const billid = element.BillID;
-    const billname = element.BillLabel;
+    const billID = element.billID;
+    const billname = element.billName;
     const memberid = element.KnessetMemberId;
     const membername = element.KnessetMemberName;
     const voteVal = element.TypeValue;
 
     const tmp = { member_id: memberid, vote: voteVal, member_name: membername };
-    if (billid in map1 === false) {
+    if (billID in map1 === false) {
       // tmp[memberid] = voteVal
-      map1[billid] = [tmp];
+      map1[billID] = [tmp];
     } else {
       // tmp[memberid] = voteVal
-      map1[billid].push(tmp);
+      map1[billID].push(tmp);
     }
   });
 
