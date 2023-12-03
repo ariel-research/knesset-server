@@ -15,6 +15,18 @@ const NEUTRAL_VOTE = 3;
  * @param {Object} members_vote_object  dict of {key= bill id, value= list of {member id, vote}}. // vote (-1 0 1)
  * @returns {Object} score per member {key= member id, val= score}.
  */
+/**
+ * A valid structure for bill label using regex for replacing multiple invalid characters.
+ * @param {*} valid
+ * @returns
+ */
+export function validate(valid) {
+  if (typeof valid === "string") {
+    let newStr = valid.replace(/[\'\"]+/g, "");
+    return newStr;
+  }
+  return valid;
+}
 export const findScoresToMembers = (
   bill_ids_list,
   user_vote_list,

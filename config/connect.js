@@ -14,6 +14,8 @@ const connection = new Sequelize(
   }
 );
 
+
+
 // Function to create the 'knesset' schema and tables
 // const createSchemaAndTables = () => {
 //   const connectionPool = createPool({

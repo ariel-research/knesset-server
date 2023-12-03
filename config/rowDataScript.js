@@ -1,6 +1,7 @@
 import Bill from "../models/bill.js";
 import Vote from "../models/vote.js";
-import excel from "exceljs"
+import excel from "exceljs";
+import { insertBillRow, insertVoteForVotesRow } from "./database.js";
 
 const data = "Votes 2021-2023.xlsx";
 
@@ -31,11 +32,7 @@ export const billsScript = async function () {
       continue;
     }
     try {
-      await Bill.findOrCreate({
-        where: { id: id },
-        defaults: { name: name, knesset_num: isNum, vote_id: vote_id },
-      });
-
+      await insertBillRow(id, name, isNum);
       console.log(`Row ${i - 1} processed successfully.`);
     } catch (error) {
       console.error(`Error inserting row ${i - 1}:`, error);
@@ -71,19 +68,8 @@ export const votingScript = async function () {
     if (bill_id === "NULL" || mk_id === "NULL" || vote === "NULL") {
       continue;
     }
-    try {
-      await Vote.create({
-        bill_id: bill_id,
-        vote_id: vote_id,
-        mk_id: mk_id,
-        mk_vote: voteStringToInt(vote),
-      });
-
-      console.log(`Row ${i - 1} processed successfully.`);
-    } catch (error) {
-      console.error(`Error inserting row ${i - 1}:`, error);
-      return;
-    }
+    await insertVoteForVotesRow(bill_id, vote_id, mk_id, vote);
+    console.log(`Row ${i - 1} processed successfully.`);
   }
 
   console.log("Data import completed.");

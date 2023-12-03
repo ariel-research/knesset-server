@@ -17,8 +17,7 @@ const Bill = connection.define("bills", {
   },
   vote_id: {
     type: Sequelize.INTEGER,
-    allowNull: false,
-    primaryKey: true,
+    allowNull: true,
   },
 });
 

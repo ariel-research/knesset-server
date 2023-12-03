@@ -42,7 +42,7 @@ export const getBillsData = async (req, res) => {
 };
 export const getBillsByKnessetNum = async (req, res) => {
   try {
-    const { knessetNum = 1 } = req.query;
+    const { knessetNum = 16 } = req.query;
     const bills = await getBillsByKnessetNumFromDB(knessetNum);
     return res.status(200).json(bills);
   } catch (error) {
