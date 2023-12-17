@@ -12,4 +12,5 @@ const VoteType = connection.define("vote_types", {
   },
 });
 
+
 export default VoteType;

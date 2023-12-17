@@ -4,18 +4,14 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 import bodyParser from "body-parser";
 import generalRoutes from "./routes/general.js";
-import databaseRoutes from "./routes/database.js";
 import morgan from "morgan";
-import https from "https";
-import fs from "fs";
-
-// import { getVotes, getBillsData } from "./controllers/general.js";
-
-import { findScoresToMembers } from "./Utils/localUtils.js";
-// import pool, { initializedDatabase } from "./config/connect.js";
+import {
+  votingScript,
+  billsScript,
+  totalScript,
+} from "./config/rowDataScript.js";
 import { scriptStarter } from "./config/apiScript.js";
-import { votingScript, billsScript } from "./config/rowDataScript.js";
-// const findScoresToMembers = require('../Utils/localUtils.js');
+import connection from "./config/connect.js";
 
 dotenv.config({ path: "../.env" });
 const app = express();
@@ -41,9 +37,13 @@ app.use("/general", generalRoutes);
 // };
 const port = process.env.SERVER_PORT ?? 8080;
 app.listen(port, () => {
-  // scriptStarter();
-  // votingScript();
-  // billsScript();
+  connection.sync().then(() => {
+    scriptStarter();
+    // totalScript();
+    // votingScript();
+    // billsScript();
+  });
+
   console.log(`Server started at port ${port}`);
 });
 

@@ -21,7 +21,7 @@ export const scriptStarter = async () => {
     // await getKnessetMembers();
     // spinnerMembers.succeed("Knesset Members fetched successfully");
     // const spinnerVoteTypes = ora("Fetching Vote Types").start();
-    await getVoteTypes();
+    // await getVoteTypes();
     // spinnerVoteTypes.succeed("Vote Types fetched successfully");
     // const spinnerVoteList = ora("Fetching Vote List").start();
     // await votesList(knessetNum);

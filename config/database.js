@@ -1,14 +1,21 @@
 import { Sequelize, where } from "sequelize";
 import connection from "../config/connect.js";
 import pool from "../config/connect.js";
-import KnessetMember from "../models/KnessetMember.js";
-import Bill from "../models/bill.js";
-import VoteType from "../models/VoteType.js";
+
 import { validate, voteStringToInt } from "../Utils/localUtils.js";
+import { Bill, Vote, VoteType, KnessetMember } from "../models/index.js";
 
-await connection.sync();
-/**
-
+export const insertRawKnessetMemberRow = async (memberID, fullName) => {
+  const fName = validate(fullName);
+  try {
+    await KnessetMember.findOrCreate({
+      where: { id: memberID },
+      defaults: { full_name: fName },
+    });
+  } catch (error) {
+    console.error(`Error with inserting knesset_member ${error.message}`);
+  }
+};
 
 /**
  * Insert a knesset member row with specific structure for the application needs into knesset_members table.
@@ -48,12 +55,19 @@ export const insertKnessetMemberRow = async (
  * @param {*} knessetNum
  */
 
-export const insertBillRow = async (billID, billName, knessetNum) => {
+export const insertBillRow = async (
+  billID,
+  billName,
+  knessetNum,
+  voteId = null
+) => {
   try {
     const validName = validate(billName);
-    await Bill.findOrCreate({
-      where: { id: billID },
-      defaults: { name: validName, knesset_num: knessetNum },
+    const [bill, created] = await Bill.upsert({
+      id: billID,
+      name: validName,
+      knesset_num: knessetNum,
+      vote_id: voteId,
     });
   } catch (err) {
     console.error(`Error in insertBillRow: ${err.message}`);
@@ -88,20 +102,33 @@ export const updateVoteId = async (billID, voteID) => {
  * @returns Number
  */
 export const getVoteId = async (billID) => {
-  return new Promise((resolve, reject) => {
-    const sql = `SELECT voteID FROM bills WHERE billID = ?`;
-    pool.query(sql, [billID], (err, res) => {
-      if (err) {
-        console.error(
-          `Failed in getVoteID function from config/database with Bill Id: ${billID}`
-        );
-        reject(err);
-      } else {
-        const voteID = res[0].voteID; // Assuming the vote_id is present in the first row of the result
-        resolve(voteID);
-      }
+  // return new Promise((resolve, reject) => {
+  //   const sql = `SELECT voteID FROM bills WHERE billID = ?`;
+  //   pool.query(sql, [billID], (err, res) => {
+  //     if (err) {
+  //       console.error(
+  //         `Failed in getVoteID function from config/database with Bill Id: ${billID}`
+  //       );
+  //       reject(err);
+  //     } else {
+  //       const voteID = res[0].voteID; // Assuming the vote_id is present in the first row of the result
+  //       resolve(voteID);
+  //     }
+  //   });
+  // });
+  try {
+    const result = await Bill.findOne({
+      attributes: ["vote_id"],
+      where: {
+        id: billID,
+      },
+      raw: true,
+      plain: true,
     });
-  });
+    return result ? result.vote_id : null;
+  } catch (e) {
+    console.error(e.message);
+  }
 };
 export const getKnessetNumberAmount = async () => {
   return new Promise((resolve, reject) => {
@@ -124,31 +151,40 @@ export const getKnessetNumberAmount = async () => {
  * @returns
  */
 export const retrieveVotesFromDB = async (voteID) => {
-  return new Promise((resolve, reject) => {
-    pool.query(
-      `SELECT bills.billID, bills.billName, knesset_members.MemberID, knesset_members.FullName, vote_types.TypeID
-      FROM bills
-      INNER JOIN votes ON votes.voteID = bills.voteID
-      INNER JOIN knesset_members ON knesset_members.MemberID = votes.KnessetMemberID
-      INNER JOIN vote_types ON vote_types.TypeID = votes.VoteValue
-      WHERE votes.voteID = ${voteID};`,
-      (err, res) => {
-        if (err) {
-          console.error("checkIfVoteExistInDB Retrieve votes table error");
-          reject(err);
-        } else {
-          const votes = res.map((row) => ({
-            billID: row.billID,
-            billName: row.billName,
-            KnessetMemberId: row.MemberID,
-            KnessetMemberName: row.FullName,
-            TypeValue: row.TypeID,
-          }));
-          resolve(votes);
-        }
-      }
-    );
-  });
+  try {
+    const votes = await Vote.findAll({
+      attributes: ["id", "vote_id"],
+      where: { vote_id: voteID },
+      include: [
+        {
+          model: Bill,
+          attributes: ["id", "name"],
+        },
+        {
+          model: KnessetMember,
+          attributes: ["id", "full_name"],
+        },
+        {
+          model: VoteType,
+          attributes: ["id"],
+        },
+      ],
+    });
+
+    // Process the result to match the structure you want
+    const formattedVotes = votes.map((vote) => ({
+      billID: vote.bill.id,
+      billName: vote.bill.name,
+      KnessetMemberId: vote.knesset_member.id,
+      KnessetMemberName: vote.knesset_member.full_name,
+      TypeValue: vote.vote_type.id,
+    }));
+
+    return formattedVotes;
+  } catch (error) {
+    console.error("retrieveVotesFromDB error:", error.message);
+    throw error;
+  }
 };
 /**
  * Function that's check if voteID is exists on the votes table.
@@ -156,11 +192,12 @@ export const retrieveVotesFromDB = async (voteID) => {
  * @returns boolean
  */
 export const checkIfVoteExistInDB = async (voteID) => {
-  const valid = !(await checkQuery("votes", "voteID", voteID));
-  if (valid) {
-    return true;
-  } else {
-    return false;
+  try {
+    const res = await Vote.findOne({ where: { vote_id: voteID } });
+    console.log(res);
+    return res === null ? false : true;
+  } catch (e) {
+    console.log("checkIfVoteExistInDB: ", e.message);
   }
 };
 /**
@@ -187,10 +224,8 @@ export const insertVoteForVotesRow = async (
       mk_id: memberID,
       mk_vote: voteStringToInt(voteValue),
     });
-
-    console.log(`Row ${i - 1} processed successfully.`);
   } catch (error) {
-    console.error(`Error inserting row ${i - 1}:`, error);
+    console.error(`Error inserting votes`, error);
     return;
   }
 };
@@ -226,7 +261,6 @@ export const getBillsFromDatabase = async () => {
     knessetNum: entry.knesset_num,
   }));
 };
-
 export const getBillsByKnessetNumFromDB = async (knessetNum) => {
   const results = await Bill.findAll({
     attributes: ["name", "id", "knesset_num"],
@@ -244,11 +278,12 @@ export const getBillsByKnessetNumFromDB = async (knessetNum) => {
 };
 
 export const insertTypeValue = async (value) => {
+  console.log(value);
   try {
     await VoteType.findOrCreate({
-      where: { id: value.TypeID },
+      where: { id: value.typeId },
       defaults: {
-        type_value: value.TypeValue,
+        value: value.typeValue,
       },
     });
   } catch (error) {

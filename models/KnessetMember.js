@@ -1,19 +1,21 @@
-import { Sequelize } from "sequelize";
+import { Sequelize, DataTypes } from "sequelize";
 import connection from "../config/connect.js";
+import Vote from "./vote.js";
+
 
 const KnessetMember = connection.define("knesset_members", {
   id: {
-    type: Sequelize.INTEGER,
+    type: DataTypes.INTEGER,
     allowNull: false,
     primaryKey: true,
   },
   full_name: {
-    type: Sequelize.STRING,
+    type: DataTypes.STRING,
     allowNull: false,
   },
   is_active: {
-    type: Sequelize.INTEGER,
-    allowNull: false,
+    type: DataTypes.INTEGER,
+    allowNull: true,
   },
 });
 

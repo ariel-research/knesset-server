@@ -1,5 +1,4 @@
 import fetch from "node-fetch";
-import pool from "../config/connect.js";
 import {
   getKnessetNumberAmount,
   getBillsFromDatabase,
@@ -86,7 +85,7 @@ export const getVotes = async (req) => {
         votesFromDB = await retrieveVotesFromDB(voteIdFromDB);
 
         votesToClient.push(...votesFromDB);
-        // console.log(votesFromDB);
+        //     // console.log(votesFromDB);
 
         /** Make an Api call to the knesset server */
       } else {
@@ -155,12 +154,12 @@ export const getScoresController = async (data) => {
   /* ---- validate data contains keys ---- */
   if (!("user_votes" in data) || !("bill_ids" in data)) {
     console.log(
-      "error: getScoresController failed, data dosent contains 'user_votes' and 'bill_ids' keys. data=",
+      "error: getScoresController failed, data does'nt contains 'user_votes' and 'bill_ids' keys. data=",
       data
     );
     return {
       error:
-        "error: the parameter dosent contains the keys: 'user_votes' and 'bill_ids'",
+        "error: the parameter does'nt contains the keys: 'user_votes' and 'bill_ids'",
       data: data,
     };
   }
