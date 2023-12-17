@@ -1,7 +1,7 @@
 import { Sequelize } from "sequelize";
 import connection from "../config/connect.js";
 
-const Bill = connection.define("bills", {
+export const Bill = connection.define("bills", {
   id: {
     type: Sequelize.INTEGER,
     allowNull: false,
@@ -17,8 +17,7 @@ const Bill = connection.define("bills", {
   },
   vote_id: {
     type: Sequelize.INTEGER,
-    allowNull: false,
-    primaryKey: true,
+    allowNull: true,
   },
 });
 

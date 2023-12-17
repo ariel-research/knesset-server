@@ -4,7 +4,6 @@ import {
   insertKnessetMemberRow,
   insertTypeValue,
   updateVoteId,
-  addToVoteListRow,
 } from "../config/database.js";
 
 const getParsedData = async (url) => {
@@ -57,11 +56,12 @@ const fetchBills = async (skip, knessetNum) => {
         break;
       }
       const entries = parsedData["feed"]["entry"];
+
       // Map the entries to an array of bill objects
       const bills = entries.map((entry) => {
         const properties = entry["content"][0]["m:properties"][0];
         return {
-          billID: properties["d:billID"][0]["_"],
+          billID: properties["d:BillID"][0]["_"],
           name:
             typeof properties["d:Name"][0] === "string"
               ? properties["d:Name"][0]
@@ -101,6 +101,7 @@ export const getBillsByKnessetNum = async (knessetNum) => {
 export const getKnessetMembers = async () => {
   let skip = 0;
   const pageSize = 100;
+
   const baseUrl =
     "http://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition()?$filter=PositionID%20eq%2043%20or%20PositionID%20eq%2061&$expand=KNS_Person&$";
   try {
