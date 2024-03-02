@@ -19,6 +19,15 @@ export const Bill = connection.define("bills", {
     type: Sequelize.INTEGER,
     allowNull: true,
   },
+  bill_date: {
+    type: Sequelize.DATE,
+    allowNull: true,
+  },
+  vote_date: {
+    type: Sequelize.DATE,
+    allowNull: true,
+  },
+
 });
 
 export default Bill;

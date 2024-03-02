@@ -1,15 +1,20 @@
 import KnessetMember from "./KnessetMember.js";
 import VoteType from "./VoteType.js";
-import Bill from "./Bill.js";
-import Vote from "./Vote.js";
+import PlenumVote from "./PlenumVote.js";
+import MemberVote from "./MemberVote.js";
+import Bill from "./Bill.js"
+import MetadataUpdate from './MetadataUpdate.js';
 
-Bill.hasOne(Vote, { foreignKey: "bill_id" });
-Vote.belongsTo(Bill, { foreignKey: "bill_id" });
+Bill.hasMany(PlenumVote, { foreignKey: "bill_id" });
+PlenumVote.belongsTo(Bill, { foreignKey: "bill_id" });
 
-KnessetMember.hasOne(Vote, { foreignKey: "mk_id" });
-Vote.belongsTo(KnessetMember, { foreignKey: "mk_id" });
+PlenumVote.hasMany(MemberVote, { foreignKey: "vote_id" });
+MemberVote.belongsTo(PlenumVote, { foreignKey: "vote_id" });
 
-VoteType.hasOne(Vote, { foreignKey: "mk_vote" });
-Vote.belongsTo(VoteType, { foreignKey: "mk_vote" });
+KnessetMember.hasMany(MemberVote, { foreignKey: "mk_id" });
+MemberVote.belongsTo(KnessetMember, { foreignKey: "mk_id" });
 
-export { VoteType, Vote, Bill, KnessetMember };
+VoteType.hasOne(PlenumVote, { foreignKey: "mk_vote" });
+PlenumVote.belongsTo(VoteType, { foreignKey: "mk_vote" });
+
+export { VoteType, Bill, PlenumVote, MemberVote, KnessetMember, MetadataUpdate };

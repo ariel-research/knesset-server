@@ -1,7 +1,5 @@
 import { Sequelize, DataTypes } from "sequelize";
 import connection from "../config/connect.js";
-import Vote from "./Vote.js";
-
 
 const KnessetMember = connection.define("knesset_members", {
   id: {

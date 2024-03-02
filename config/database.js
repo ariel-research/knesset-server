@@ -3,7 +3,7 @@ import connection from "../config/connect.js";
 import pool from "../config/connect.js";
 
 import { validate, voteStringToInt } from "../Utils/localUtils.js";
-import { Bill, Vote, VoteType, KnessetMember } from "../models/index.js";
+import { Bill, PlenumVote, VoteType, KnessetMember } from "../models/index.js";
 
 export const insertRawKnessetMemberRow = async (memberID, fullName) => {
   const fName = validate(fullName);

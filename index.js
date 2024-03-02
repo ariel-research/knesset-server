@@ -12,6 +12,8 @@ import {
 } from "./config/rowDataScript.js";
 import { scriptStarter } from "./config/apiScript.js";
 import connection from "./config/connect.js";
+import fs from "fs"
+import https from "https"
 
 dotenv.config({ path: "../.env" });
 const app = express();
@@ -31,21 +33,38 @@ app.use("/general", generalRoutes);
 //   res.status(202).json({ result: "Success" });
 // });
 
-// const options = {
-//   key: fs.readFileSync("./certifications/server.key"),
-//   cert: fs.readFileSync("./certifications/server.cert"),
-// };
-const port = process.env.SERVER_PORT ?? 8080;
-app.listen(port, () => {
-  connection.sync().then(() => {
-    scriptStarter();
-    // totalScript();
-    // votingScript();
-    // billsScript();
-  });
 
-  console.log(`Server started at port ${port}`);
+const options = {
+   key: fs.readFileSync("./server.key"),
+   cert: fs.readFileSync("./server.cert"),
+ };
+
+/*https.createServer(options, app) 
+.listen(process.env.SERVER_PORT, function (req, res) {
+connection.sync().then(() => {
+	console.log("database sync");
+//    totalScript();
+  });
+  console.log("Server started at port 8080"); 
+});*/
+
+app.listen(process.env.SERVER_PORT, () => {
+  connection.sync().then(() => {
+    console.log("database sync");
+    scriptStarter();
+  });
+  console.log(`Server started at port ${process.env.SERVER_PORT}`);
 });
+
+
+
+//const port = process.env.SERVER_PORT ?? 8080;
+//app.listen(port, () => {
+//  connection.sync().then(() => {
+//    totalScript();
+//  });
+//  console.log(`Server started at port ${port}`);
+//});
 
 // https.createServer(options, app).listen(port, (req,res) => {
 //   initializedDatabase();
