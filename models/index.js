@@ -1,7 +1,7 @@
 import KnessetMember from "./KnessetMember.js";
 import VoteType from "./VoteType.js";
-import Bill from "./bill.js";
-import Vote from "./vote.js";
+import Bill from "./Bill.js";
+import Vote from "./Vote.js";
 
 Bill.hasOne(Vote, { foreignKey: "bill_id" });
 Vote.belongsTo(Bill, { foreignKey: "bill_id" });

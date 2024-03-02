@@ -1,5 +1,5 @@
-import Bill from "../models/bill.js";
-import Vote from "../models/vote.js";
+import Bill from "../models/Bill.js";
+import Vote from "../models/Vote.js";
 import excel from "exceljs";
 import {
   insertBillRow,

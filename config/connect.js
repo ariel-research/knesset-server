@@ -4,13 +4,13 @@ dotenv.config();
 import { Sequelize } from "sequelize";
 
 const connection = new Sequelize(
-  process.env.CLOUD_SQL_DATABASE,
-  process.env.CLOUD_SQL_USERNAME,
-  process.env.CLOUD_SQL_PASSWORD,
+  process.env.SQL_DATABASE,
+  process.env.SQL_USERNAME,
+  process.env.SQL_PASSWORD,
   {
     dialect: "mysql",
-    host: process.env.CLOUD_SQL_HOST,
-    port: process.env.CLOUD_SQL_PORT,
+    host: process.env.SQL_HOST,
+    port: process.env.SQL_PORT,
   }
 );
 
