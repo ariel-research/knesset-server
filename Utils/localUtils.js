@@ -49,6 +49,11 @@ export const findScoresToMembers = (
     // console.log("user_vote_list.length", user_vote_list.length)
     // console.log("Object.keys(members_vote_object).length", Object.keys(members_vote_object).length)
     // throw new TypeError(); // throws en error
+    console.log(
+      "bill_ids_list:", bill_ids_list,
+      "user_vote_list:", user_vote_list,
+      "Object.keys(members_vote_object):",
+        Object.keys(members_vote_object),)
     return {
       error: "data length error",
       "bill_ids_list.length": bill_ids_list.length,

@@ -4,8 +4,8 @@ import {
   getBills,
   getVoteId,
   doesPlenumVoteExist,
-  
 } from "../config/dbQueries.js";
+import { MemberVote, VoteType, PlenumVote, KnessetMember,Bill, MetadataUpdate } from "../models/index.js";
 
 import { findScoresToMembers } from "../Utils/localUtils.js";
 
@@ -42,7 +42,6 @@ export const getBillsByKnessetNum = async (req, res) => {
     const { knessetNum = 25 } = req.query;
     console.log("knesset num: ", knessetNum)
     const bills = await getBills(knessetNum);
-    console.log("bills:", bills)
     return res.status(200).json(bills);
   } catch (error) {
     return res.status(404).json(error);
@@ -61,16 +60,15 @@ const billIdsWithoutDuplicates = async (billIds) => {
   return [...new Set(billIds)];
 };
 
-
+let voteIds = []
 export const getVotes = async (req) => {
     try {
-      const { billID } = req.query;
-      if (!billID || billID === "") {
+      const { billId } = req.query;
+      if (!billId || billId === "") {
         return null;
       }
       const billIds = billId.split(",");
       const setOfBillIds = [...new Set(billIds)];
-  
       const votesToClient = [];
   
       for (let billId of setOfBillIds) {
@@ -78,13 +76,14 @@ export const getVotes = async (req) => {
         const billRecord = await Bill.findOne({ where: { id: billId } });
   
         if (!billRecord) {
-          console.warn(`No vote found for bill id ${id}`);
+          console.warn(`No vote found for bill id ${billId}`);
           continue;
         }
-        const PlenumVote = await PlenumVote.findOne({
+        const plenumVote = await PlenumVote.findOne({
           where: { bill_id : billId }, 
           order: [['date', 'DESC']],
         });
+        voteIds.push(plenumVote.id)
         
         if (!plenumVote) {
           console.warn(`No plenum vote found for bill id ${billId}`);
@@ -93,18 +92,20 @@ export const getVotes = async (req) => {
 
         // מתוך טבלת member_votes נביא את ההצבעות של חברי הכנסת
         const memberVotes = await MemberVote.findAll({
-          where: { vote_id: PlenumVote.id },
+          where: { vote_id: plenumVote.id },
         });
+        console.log("member votes length: ",memberVotes.length)
   
         for (let voteRow of memberVotes) {
           const member = await KnessetMember.findOne({ where: { id: voteRow.mk_id } });
   
           votesToClient.push({
-            voteID: vote.id,
-            voteName: vote.name,
+            voteID: plenumVote.id,
+            voteName: plenumVote.title,
             KnessetMemberId: member.id,
             KnessetMemberName: member.full_name,
-            TypeValue: voteRow.mk_vote
+            TypeValue: voteRow.mk_vote,
+            billId: plenumVote.bill_id,
           });
         }
       }
@@ -121,53 +122,54 @@ export const getScoresController = async (data) => {
   /**
    * data {
    *        user_votes  : [integer,], // 1-PRO|2-CON|3-no opinion
-   *        vote_ids    : [integer,]
+   *        bill_ids    : [integer,]
    *      }
    */
   /* ---- validate data contains keys ---- */
-  if (!("user_votes" in data) || !("vote_ids" in data)) {
+  if (!("user_votes" in data) || !("bill_ids" in data)) {
     console.log(
-      "error: getScoresController failed, data does'nt contains 'user_votes' and 'vote_ids' keys. data=",
+      "error: getScoresController failed, data does'nt contains 'user_votes' and 'bill_ids' keys. data=",
       data
     );
     return {
       error:
-        "error: the parameter does'nt contains the keys: 'user_votes' and 'vote_ids'",
+        "error: the parameter does'nt contains the keys: 'user_votes' and 'bill_ids'",
       data: data,
     };
   }
 
   const user_votes = data.user_votes;
-  const vote_ids = data.vote_ids;
+  const bill_ids = data.bill_ids;
 
   /* ---- validate data is correct ---- */
-  if (!Array.isArray(user_votes) || !Array.isArray(vote_ids)) {
+  if (!Array.isArray(user_votes) || !Array.isArray(bill_ids)) {
     console.log(
-      "error: getScoresController failed, 'user_votes' and 'vote_ids' should be an arrays",
+      "error: getScoresController failed, 'user_votes' and 'bill_ids' should be an arrays",
       Array.isArray(user_votes),
-      Array.isArray(vote_ids)
+      Array.isArray(bill_ids)
     );
     return {
       error:
-        "error: getScoresController failed, 'user_votes' and 'vote_ids' should be an arrays",
+        "error: getScoresController failed, 'user_votes' and 'bill_ids' should be an arrays",
     };
   }
-  if (user_votes.length !== vote_ids.length) {
+  if (user_votes.length !== bill_ids.length) {
     const error =
-      "error: user_votes and vote_ids are not the same length." +
+      "error: user_votes and bill_ids are not the same length." +
       " user_votes.length:" +
       user_votes.length +
-      " vote_ids.length:" +
-      vote_ids.length;
+      " bill_ids.length:" +
+      bill_ids.length;
     console.log(error);
     return { error };
   }
 
   /* ---- get votes ---- */
-  const voteId_as_string = vote_ids.join(",");
-  const vote_id_query = { query: { voteID: voteId_as_string } };
-  const votes = await getVotes(vote_id_query);
-  console.log(votes);
+  const billId_as_string = bill_ids.join(",");
+  const bill_id_query = { query: { billId: billId_as_string } };
+  console.log("going to getvotes")
+  const votes = await getVotes(bill_id_query);
+  //console.log(votes);
 
   /* ---- getVotes - validate there are no errors ---- */
   if (votes == null) {
@@ -187,7 +189,7 @@ export const getScoresController = async (data) => {
   const user_boolean_votes_without_no_opinion = [];
   for (let index = 0; index < user_votes.length; index++) {
     let user_vote = user_votes[index];
-    const vote_id = vote_ids[index];
+    const vote_id = voteIds[index];
     if (user_vote !== 3) {
       if (user_vote === 1) {
         user_vote = true;
@@ -226,8 +228,8 @@ export const getScoresController = async (data) => {
   }
   if ("error" in scores) {
     console.log("error: findScoresToMembers faild with error:", scores);
-    console.log("vote_ids:", vote_ids);
-    console.log("vote_ids length:", vote_ids.length);
+    console.log("bill_ids:", bill_ids);
+    console.log("bill_ids length:", bill_ids.length);
     console.log("user_votes:", user_votes);
     console.log("user_votes length:", user_votes.length);
     console.log("map1:", map1);
@@ -257,7 +259,7 @@ export const getScoresController = async (data) => {
    *                ]
    *      }
    */
-  const VoteNames = voteId2VoteName(votes);
+  const VoteNames = billId2VoteName(votes);
   // console.log("scores:", scores);
   // console.log("VoteNames:", VoteNames);
   // console.log("map1:", map1);
@@ -267,14 +269,15 @@ export const getScoresController = async (data) => {
   return res1;
 };
 
-const voteId2VoteName = (votes) => {
+const billId2VoteName = (votes) => {
   const visited = {};
   votes.forEach((element) => {
     const vote_id = element.voteID;
     const vote_name = element.voteName;
+    const bill_id = element.billId;
 
     if (!(vote_id in visited)) {
-      visited[vote_id] = { vote_id: vote_id, vote_name: vote_name };
+      visited[vote_id] = { vote_id: vote_id, vote_name: vote_name, bill_id: bill_id };
     }
   });
   return visited;
@@ -285,7 +288,7 @@ const arrangeDataToClient = (votes_map, scores, VoteNames) => {
   Object.entries(votes_map).forEach((entries) => {
     const [key, value] = entries;
     // console.log("key:", key);
-    // console.log("value:" ,value);
+     //console.log("value:" ,value);
 
     const voters = value.map(({ member_id, vote, member_name }) => ({
       voter_id: member_id,
@@ -295,6 +298,7 @@ const arrangeDataToClient = (votes_map, scores, VoteNames) => {
     }));
     const entry = {
       vote_id: key,
+      bill_id: VoteNames[key]["bill_id"],
       vote_name: VoteNames[key]["vote_name"],
       voters: voters,
     };
@@ -314,6 +318,7 @@ export const parseVotes = async (votes) => {
     const memberid = element.KnessetMemberId;
     const membername = element.KnessetMemberName;
     const voteVal = element.TypeValue;
+    const billId = element.billId;
 
     const tmp = { member_id: memberid, vote: voteVal, member_name: membername };
     if (voteID in map1 === false) {
@@ -324,6 +329,5 @@ export const parseVotes = async (votes) => {
       map1[voteID].push(tmp);
     }
   });
-
   return map1;
 };
