@@ -219,9 +219,7 @@ export const fetchPlenumVotes = async () => {
           console.log(`bill ${billId} from vote ${voteId} doesn't exist`)
           continue;
         }*/
-        const [d,m,y,h,min] = vote.VoteDateTime.match(/\d+/g).map(Number);
-        const voteDate = new Date(y, m - 1, d, h, min);
-        const knessetNum = voteDate >= new Date(2022,11,11)? 25 : 24;
+        const voteDate = vote.VoteDateTime;
         const voteSubject = vote.VoteSubject;
         const ordinal = vote.Ordinal;
         const forOption = vote.ForOptionDesc;
@@ -234,7 +232,7 @@ export const fetchPlenumVotes = async () => {
             billId,
             voteTitle,
             voteSubject,
-            knessetNum,
+            25,
             ordinal,
             voteDate,
             forOption,

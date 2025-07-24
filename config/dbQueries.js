@@ -8,6 +8,8 @@ import { MemberVote, VoteType, PlenumVote, KnessetMember,Bill, MetadataUpdate } 
 // insert
 const syncDB = async () => {
   await connection.sync({ alter: true });
+
+  console.log("SYNC DB")
 };
 syncDB();
 
@@ -156,14 +158,12 @@ export const doesPlenumVoteExist = async (voteId) => {
 //member-votes
 // insert
 export const insertMemberVoteRow = async (
-    memberVoteID,
     voteId,
     memberID,
     voteValue
   ) => {
     try {
       await MemberVote.create({
-        id: memberVoteID,
         vote_id: voteId,
         mk_id: memberID,
         mk_vote: voteStringToInt(voteValue),
@@ -264,9 +264,16 @@ export const getRawBills = async (knessetNum = null) => {
   };
 
   export const getBills = async (knessetNum = null) => {
-    const whereClause = knessetNum ? { knesset_num: knessetNum } : {};
+    const whereClause = knessetNum ? { knesset_num: knessetNum} : {};
     const bills = await Bill.findAll({
       where: whereClause,
+      include: [
+        {
+          model: PlenumVote,
+          required: true, // חשוב! זה עושה INNER JOIN – כלומר רק הצעות עם הצבעות
+          attributes: [], // אם לא צריך את פרטי ההצבעה
+        },
+      ],
     });
   
     return bills.map((entry) => ({

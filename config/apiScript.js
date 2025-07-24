@@ -14,6 +14,9 @@ import {
   fetchMemberVotes,
   updateFetchTime,
 } from "../controllers/fetch.js";
+import {
+  fetchMemberVotesFromCsv,
+} from "../controllers/readFile.js";
 import ora from "ora";
 
 export const scriptStarter = async () => {
@@ -40,6 +43,7 @@ export const scriptStarter = async () => {
 
     spinnerMemberVotes = ora("Fetching member Votes").start();
     //await fetchMemberVotes();
+     //await fetchMemberVotesFromCsv();
     spinnerMemberVotes.succeed("member Votes fetched");
 
   } catch (error) {
