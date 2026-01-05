@@ -320,7 +320,7 @@ export const parseVotes = async (votes) => {
     const voteVal = element.TypeValue;
     const billId = element.billId;
 
-    const tmp = { member_id: memberid, vote: voteVal, member_name: membername };
+    const tmp = { member_id: memberid, vote: voteVal, member_name: membername, bill_id:billId };
     if (voteID in map1 === false) {
       // tmp[memberid] = voteVal
       map1[voteID] = [tmp];

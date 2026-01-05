@@ -10,7 +10,7 @@ const AGAINST_INT = 2;
 const NEUTRAL_VOTE = 3;
 /**
  * Finds the score of each Knesset member in relation to what the user chose.
- * @param {Array} bill_ids_list         list of bill IDs.
+ * @param {Array} vote_ids_list         list of bill IDs.
  * @param {Array} user_vote_list        list of boolean values for or against.
  * @param {Object} members_vote_object  dict of {key= bill id, value= list of {member id, vote}}. // vote (-1 0 1)
  * @returns {Object} score per member {key= member id, val= score}.
@@ -28,55 +28,58 @@ export function validate(valid) {
   return valid;
 }
 export const findScoresToMembers = (
-  bill_ids_list,
+  vote_ids_list,
   user_vote_list,
   members_vote_object
 ) => {
   // console.log('members_vote_object:', members_vote_object)
   let member_score = {};
-  const bill_len = bill_ids_list.length;
+  const bill_len = vote_ids_list.length;
 
-  /* check if len are equals and not zero | bill_ids_list | user_vote_list | members_vote_object.keys | */
+  /* check if len are equals and not zero | vote_ids_list | user_vote_list | members_vote_object.keys | */
 
   if (
-    bill_ids_list.length !== user_vote_list.length ||
+    vote_ids_list.length !== user_vote_list.length ||
     user_vote_list.length !== Object.keys(members_vote_object).length
-    // || bill_ids_list.length === 0 // bill_ids_list could be an empty list in case the user votes only AVOID.
+    // || vote_ids_list.length === 0 // vote_ids_list could be an empty list in case the user votes only AVOID.
   ) {
-    // console.log("checking" ,(bill_ids_list.length === user_vote_list.length) && user_vote_list.length === Object.keys(members_vote_object).length)
-    // console.log("bill_ids_list.length === 0", bill_ids_list.length === 0)
-    // console.log("bill_ids_list.length", bill_ids_list.length)
+    // console.log("checking" ,(vote_ids_list.length === user_vote_list.length) && user_vote_list.length === Object.keys(members_vote_object).length)
+    // console.log("vote_ids_list.length === 0", vote_ids_list.length === 0)
+    // console.log("vote_ids_list.length", vote_ids_list.length)
     // console.log("user_vote_list.length", user_vote_list.length)
     // console.log("Object.keys(members_vote_object).length", Object.keys(members_vote_object).length)
     // throw new TypeError(); // throws en error
     console.log(
-      "bill_ids_list:", bill_ids_list,
+      "vote_ids_list:", vote_ids_list,
       "user_vote_list:", user_vote_list,
       "Object.keys(members_vote_object):",
         Object.keys(members_vote_object),)
     return {
       error: "data length error",
-      "bill_ids_list.length": bill_ids_list.length,
+      "vote_ids_list.length": vote_ids_list.length,
       "user_vote_list.length": user_vote_list.length,
       "Object.keys(members_vote_object).length":
         Object.keys(members_vote_object).length,
     };
   }
-  /**  for all bill_id in bill_ids_list:
+  /**  for all vote_id in vote_ids_list:
    *     for all member, vote in items:
    *
    *  */
   /* checks for every member if vote like the user, if yes get +1, if opposite get -1, if vote avoid not change */
-  bill_ids_list.forEach((bill_id, index) => {
-    // console.log("bill_id", bill_id);
+  console.log("vote_ids_list: ", vote_ids_list)
+  console.log("vote members: ", members_vote_object)
+  console.log("user votes: ", user_vote_list)
+  vote_ids_list.forEach((vote_id, index) => {
+    // console.log("vote_id", vote_id);
     // console.log("index", index);
     const user_vote = user_vote_list[index];
 
-    // console.log(`members_vote_object: ${members_vote_object} \nbill_id: ${bill_id}`)
-    if (bill_id in members_vote_object === false)
-      console.log("bill id is not in members_vote_object", bill_id); //
+    // console.log(`members_vote_object: ${members_vote_object} \nvote_id: ${vote_id}`)
+    if (vote_id in members_vote_object === false)
+      console.log("vote id is not in members_vote_object", vote_id); //
 
-    members_vote_object[bill_id].forEach((element) => {
+    members_vote_object[vote_id].forEach((element) => {
       const member_id = element["member_id"];
       const member_vote = element["vote"];
 
