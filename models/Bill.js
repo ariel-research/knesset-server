@@ -27,6 +27,10 @@ export const Bill = connection.define("bills", {
     type: Sequelize.DATE,
     allowNull: true,
   },
+  link: {
+    type: Sequelize.STRING(500),
+    allowNull: true,
+  },
 
 });
 

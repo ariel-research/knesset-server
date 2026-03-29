@@ -1,11 +1,3 @@
-/*import {
-  getBillsByKnessetNum,
-  getKnessetMembers,
-  getBillVoteIds,
-  getVoteTypes,
-  votesList,
-} from "../controllers/database.js";
-import ora from "ora";*/
 import {
   fetchBillsByKnessetNum,
   fetchKnessetMembers,
@@ -15,78 +7,41 @@ import {
   updateFetchTime,
 } from "../controllers/fetch.js";
 import {
-  fetchMemberVotesFromCsv,
+  fetchMemberVotesFromCsv as fetchMemberVotesFromOldCsv,
 } from "../controllers/readFile.js";
+import {
+  fetchBillsFromCsv,
+  fetchKnessetMembersFromCsv,
+  fetchPlenumVotesFromCsv,
+  fetchMemberVotesFromCsv,
+} from "../controllers/readFromFiles.js";
 import ora from "ora";
 
 export const scriptStarter = async () => {
-  let knessetNum = process.env.START_KNESSET;
-  let spinnerMembers, spinnerVoteTypes, spinnerBills, spinnerMemberVotes, spinnerPlenumVotes;
+  let spinnerMembers, spinnerBills, spinnerPlenumVotes, spinnerMemberVotes;
 
   try {
-    
-    spinnerMembers = ora("Fetching Knesset Members").start();
-    //await fetchKnessetMembers();
-    spinnerMembers.succeed("Knesset Members fetched");
+    spinnerMembers = ora("Fetching Knesset Members from CSV").start();
+    //await fetchKnessetMembersFromCsv();
+    spinnerMembers.succeed("Knesset Members fetched from CSV");
 
-    spinnerVoteTypes = ora("Fetching Vote Types").start();
-    //await getVoteTypes();
-    spinnerVoteTypes.succeed("Vote Types fetched");
+    spinnerBills = ora("Fetching Bills from CSV").start();
+    //await fetchBillsFromCsv();
+    spinnerBills.succeed("Bills fetched from CSV");
 
-    spinnerBills = ora("Fetching bills").start();
-    //await fetchBillsByKnessetNum();
-    spinnerBills.succeed("bills fetched");
+    spinnerPlenumVotes = ora("Fetching Plenum Votes from CSV").start();
+    //await fetchPlenumVotesFromCsv();
+    spinnerPlenumVotes.succeed("Plenum Votes fetched from CSV");
 
-    spinnerPlenumVotes = ora("Fetching plenum Votes").start();
-    //await fetchPlenumVotes();
-    spinnerPlenumVotes.succeed("plenum Votes fetched");
-
-    spinnerMemberVotes = ora("Fetching member Votes").start();
-    //await fetchMemberVotes();
-     //await fetchMemberVotesFromCsv();
-    spinnerMemberVotes.succeed("member Votes fetched");
+    spinnerMemberVotes = ora("Fetching Member Votes from CSV").start();
+    //await fetchMemberVotesFromCsv();
+    spinnerMemberVotes.succeed("Member Votes fetched from CSV");
 
   } catch (error) {
-    if (spinnerBills) spinnerBills.fail("Failed Bills");
     if (spinnerMembers) spinnerMembers.fail("Failed Members");
-    if (spinnerVoteTypes) spinnerVoteTypes.fail("Failed Vote Types");
+    if (spinnerBills) spinnerBills.fail("Failed Bills");
     if (spinnerPlenumVotes) spinnerPlenumVotes.fail("Failed Plenum Votes");
-    if (spinnerMemberVotes) spinnerMemberVotes.fail("Failed member Votes");
+    if (spinnerMemberVotes) spinnerMemberVotes.fail("Failed Member Votes");
     console.error(error);
   }
 };
-
-
-/*export const scriptStarter = async () => {
-  let knessetNum = process.env.START_KNESSET;
-  let spinnerBills;
-  let spinnerMembers;
-  console.log(knessetNum);
-  try {
-      spinnerBills = ora("Fetching Bills by Knesset Number").start();
-     await getBillsByKnessetNum(knessetNum);
-     spinnerBills.succeed("Bills fetched successfully");
-    /* const spinnerVotes = ora("Fetching Bill Vote IDs").start();
-     await getBillVoteIds(knessetNum);
-     spinnerVotes.succeed("Bill Vote IDs fetched successfully");
-      spinnerMembers = ora("Fetching Knesset Members").start();
-     await getKnessetMembers();
-     spinnerMembers.succeed("Knesset Members fetched successfully");
-    // const spinnerVoteTypes = ora("Fetching Vote Types").start();
-    // await getVoteTypes();
-    // spinnerVoteTypes.succeed("Vote Types fetched successfully");
-     /*const spinnerVoteList = ora("Fetching Vote List").start();
-     await votesList(knessetNum);
-     spinnerVoteList.succeed("Votes List fetched successfully");
-  } catch (error) {
-    if (spinnerBills) {
-      spinnerBills.fail("Error fetching Bills");
-    }
-
-    if (spinnerMembers) {
-      spinnerMembers.fail("Error fetching Knesset Members");
-    }
-    console.error(error);
-  }
-};
-*/

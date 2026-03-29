@@ -15,15 +15,25 @@ import {
   getKnessetMembersIds,
 } from "../config/dbQueries.js";
 import Fuse from 'fuse.js';
+import https from 'https';
+import fetch from 'node-fetch';
 
 let fuse = null
+
+// Create an HTTPS agent that bypasses certificate validation for local development
+// This is needed when running behind corporate proxies, VPNs, or antivirus software
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false
+});
+
 // פונקציה גנרית לקרוא JSON מ-ODATA v4
 const getParsedData = async (url) => {
   try {
     const response = await fetch(url, {
       headers: {
         "Accept": "application/json"
-      }
+      },
+      agent: httpsAgent
     });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

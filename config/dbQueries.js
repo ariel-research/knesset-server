@@ -6,12 +6,6 @@ import { MemberVote, VoteType, PlenumVote, KnessetMember,Bill, MetadataUpdate } 
 
 // knesset-members
 // insert
-const syncDB = async () => {
-  await connection.sync({ alter: true });
-
-  console.log("SYNC DB")
-};
-syncDB();
 
 export const insertKnessetMemberRow = async (
     memberID,
@@ -235,6 +229,7 @@ export const insertBillRow = async (
     billDate = null,
     voteId = null,
     voteDate = null,
+    link = null,
   ) => {
     try {
       const validName = validate(billName);
@@ -245,6 +240,7 @@ export const insertBillRow = async (
         bill_date: billDate ? new Date(billDate) : null,
         vote_date: voteDate ? new Date(voteDate) : null,
         vote_id: voteId,
+        link,
       });
     } catch (err) {
       console.error(`Error in insertBillRow: ${err.message}`);
@@ -283,6 +279,7 @@ export const getRawBills = async (knessetNum = null) => {
       voteId: entry.vote_id,
       billDate: entry.bill_date,
       voteDate: entry.vote_date,
+      link: entry.link,
     }));
   };
 

@@ -28,7 +28,7 @@
     "mysql": "^2.18.1",
     "mysql2": "^3.6.0",
     "node-fetch": "^3.3.1",
-    "nodemon": "^2.0.22",
+    "nodemon": "^3.1.11",
     "ora": "^7.0.1",
     "puppeteer": "^24.10.0",
     "react-virtualized-auto-sizer": "^1.0.26",
