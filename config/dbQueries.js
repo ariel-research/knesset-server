@@ -44,7 +44,7 @@ export const getBillsCursor = async (knessetNum, cursor = null, limit = PAGE_SIZ
 
   const [bills, total] = await Promise.all([
     Bill.findAll({ where, include: PLENUM_JOIN, order: [["id", "DESC"]], limit }),
-    cursor ? null : Bill.count({ where: baseWhere, include: PLENUM_JOIN }),
+    cursor ? null : Bill.count({ where: baseWhere, include: PLENUM_JOIN, distinct: true, col: "id" }),
   ]);
 
   return { bills: bills.map(billShape), total };
@@ -68,7 +68,7 @@ export const searchBillsCursor = async (knessetNum, query, cursor = null, limit 
 
   const [bills, total] = await Promise.all([
     Bill.findAll({ where, include: PLENUM_JOIN, order: [["id", "DESC"]], limit }),
-    cursor ? null : Bill.count({ where: baseWhere, include: PLENUM_JOIN }),
+    cursor ? null : Bill.count({ where: baseWhere, include: PLENUM_JOIN, distinct: true, col: "id" }),
   ]);
 
   return { bills: bills.map(billShape), total };
