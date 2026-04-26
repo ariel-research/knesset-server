@@ -5,7 +5,7 @@ import {
     getLastUpdated,
     getPlenumVotesIds,
     getKnessetMembersIds,
-  } from "../config/dbQueries.js";
+  } from "../config/dbQueriesOld.js";
 
   
   import fs from 'fs';

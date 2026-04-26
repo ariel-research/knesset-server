@@ -6,7 +6,7 @@ import {
   getRawBills,
   getPlenumVotesIds,
   getKnessetMembersIds,
-} from "../config/dbQueries.js";
+} from "../config/dbQueriesOld.js";
 
 import fs from "fs";
 import path from "path";

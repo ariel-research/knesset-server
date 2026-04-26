@@ -13,7 +13,7 @@ import {
   getRawBills,
   getPlenumVotesIds,
   getKnessetMembersIds,
-} from "../config/dbQueries.js";
+} from "../config/dbQueriesOld.js";
 import Fuse from 'fuse.js';
 import https from 'https';
 import fetch from 'node-fetch';

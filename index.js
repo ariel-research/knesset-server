@@ -3,8 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import bodyParser from "body-parser";
+import generalOldRoutes from "./routes/generalOld.js";
 import generalRoutes from "./routes/general.js";
-import generalV2Routes from "./routes/generalV2.js";
 import morgan from "morgan";
 import {
   votingScript,
@@ -26,8 +26,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
-app.use("/general", generalRoutes);
-app.use("/v2", generalV2Routes);
+app.use("/general", generalOldRoutes);
+app.use("/v2", generalRoutes);
 // app.use("/database", databaseRoutes);
 
 // app.get("/", (req, res) => {
