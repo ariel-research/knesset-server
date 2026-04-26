@@ -27,7 +27,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
 app.use("/general", generalOldRoutes);
-app.use("/v2", generalRoutes);
+app.use("/general/v2", generalRoutes);
 // app.use("/database", databaseRoutes);
 
 // app.get("/", (req, res) => {
