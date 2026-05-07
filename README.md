@@ -1,59 +1,65 @@
-# Server Installation Guide
+<div dir="rtl">
 
-## Introduction
-This guide will walk you through the installation process of the Political-Transparency server and the configuration of its connection to the database.
+# שקיפות בכנסת - VoteMate
 
-## Prerequisites
-Before you begin, make sure you have the following prerequisites:
+אתר זה מציג את הצעות החוק שעלו בכנסת ומאפשר לכם להצביע בעד/נגד/נמנע.
+לאחר מכן תוכלו לצפות באחוזי ההתאמה שלכם עם כל אחד מחברי הכנסת
+ניתן לעיין בהצעות, לחפש הצעות ולצפות בהצבעות של חברי הכנסת.
 
-1. **Node.js and npm:** Ensure you have Node.js (v18.13.0) and npm (v8.19.3) installed on your system. You can download them from nodejs.org.
-2. **GitHub Account:** You'll need a GitHub account to access the repository and download the code.
-3. **MySql Server:** You'll need to configure MySql server on the local machine see the next tutorial for it: [Install SQL SERVER](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-setup?view=sql-server-ver16)
+## מבנה הנתונים
 
-## Step 1: Cloning the Repository
-1. Open your terminal and navigate to the directory where you want to clone the repository:
+הנתונים מגיעים מתוך קבצי CSV של הכנסת.
 
-      **`cd /path/to/your/directory`**
+| קובץ | תיאור |
+|------|--------|
+| `knesset-votes.csv` | כל ההצבעות בכנסת ה-25 - כותרת, תאריך, מזהה פריט, שיטת הצבעה |
+| `knesset-member-votes.csv` | הצבעת כל חבר כנסת בכל הצבעה (בעד / נגד / נמנע / לא הצביע) |
+| `knesset-members.csv` | רשימת חברי הכנסת ה-25 - שם, מגדר, סיעה, תאריכי כהונה |
+| `knesset-bills.csv` | הצעות חוק בכנסת ה-25 - שם, סוג, סטטוס, ועדה מטפלת |
 
-2. Clone the Political-Transparency repository from GitHub:
+---
 
-    **`https://github.com/Political-Transparency/server`**
-   
-3. Navigate to the project directory:
+## הערות
 
-   **`cd server`**
+- לאתר הכנסת קיים API ציבורי בשם odata 
+`https://knesset.gov.il/Odata/`.  
+ניסינו להשתמש בו, אך נתקלנו בתקלות שמנעו שדימוש תקין ועקבי בנתונים.  
+לכן בחרנו להשתמש בנתונים מתוך קבצי CSV שקיבלנו מאנשי המחשוב של odata, ולטעון אותם מקומית לתוך מסד הנתונים שלנו.
 
-## Step 2: Setting Up the Server
-1. Install the required dependencies by running the following command:
+- בקובץ ההצבעות (`knesset-votes.csv`) לכל הצבעה יש עמודת `Item ID` - מזהה שאמור להצביע על הפריט (הצעת החוק) שעליו הצביעו.  
+אך בפועל, עבור חלק גדול מההצבעות, **אין `Item ID` תואם כ-`ID` בקובץ הצעות החוק** (`knesset-bills.csv`).
 
- ```bash
-npm install
-```
+זוהי תקלה בנתוני הכנסת עצמם - אין התאמה בין הטבלאות.
+לכן אנחנו משתמשים בנתוני ההצבעות בלבד כרגע, וכל הצעה שמוצגת היא בעצם ההצבעה אחרונה שקשורה לאותה הצעה, כלומר לאותו `Item ID`.
 
-2. Create .env file in the root folder of the server and to use MySQL Cloud or Local Server and update with your MySql credentials:
-   
-![image](https://github.com/Political-Transparency/server/assets/73185009/d9341117-76c1-416c-8085-e921e48bc6fb)
+### דוגמאות לחוסר התאמה בנתוני הכנסת
 
-The **START_KNESSET** and **LAST_KNESSET** environment variables act as controls to fine-tune the script's execution pace, granting users the ability to precisely orchestrate their API queries to the Knesset API. By default, in the .env.example file **START_KNESSET** is set to 1, and **LAST_KNESSET** is set to 25, establishing the initial parameters for the API query range.
+להלן 3 הצבעות שה-`Item ID` שלהן לא מופיע כלל בטבלת הצעות החוק:
 
-<b>Note:<b> .env file should be in a common file for client and server repos.
-   
+| מזהה הצבעה | תאריך | Item ID | כותרת ההצבעה |
+|------------|-------|---------|--------------|
+| 37658 | 16/11/2022 | 2197188 | הודעת יושב ראש הוועדה המסדרת על בחירת ועדות זמניות לענייני כספים ולענייני חוץ וביטחון |
+| 37674 | 07/12/2022 | 2198015 | בחירת סגנים זמניים ליושב ראש הכנסת |
+| 37686 | 13/12/2022 | 2198226 | בחירת יושב ראש הכנסת ה-25 |
 
-## Step 3: Starting the Server (Initial Setup)
-After configuring the server settings, you can initiate it by running the following command:
-```bash
-npm start
-```
+בשלושת המקרים הללו, ה-`Item ID` (`2197188`, `2198015`, `2198226`) אינו קיים בשום שורה של `knesset-bills.csv`.
 
-The server will commence operation on the specified port (the default is 8080). You can access it via your web browser or through tools such as Postman.
+### ההשלכה על האפליקציה
 
-During the initial server startup, a script will execute to initialize the schema and tables. Additionally, it will inject the latest updates from the Knesset API into our MySQL server. Please note that for the first-time setup, this process may take up to 30 minutes to complete.
+מכיוון שאין התאמה אמינה בין הצבעות להצעות חוק, **הקישור שמופיע בכרטיס ההצבעה באפליקציה מוביל לדף ההצבעה עצמה** באתר הכנסת (ולא לדף הצעת החוק).
 
+פורמט הקישור:  
+`https://main.knesset.gov.il/Activity/plenum/Votes/Pages/vote.aspx?voteId=<VOTE_ID>`
 
-## Conclusion
+לדוגמה, הצבעה מספר 37658:  
+`https://main.knesset.gov.il/Activity/plenum/Votes/Pages/vote.aspx?voteId=37658`
 
-You've successfully installed the Political-Transparency server and configured the connection to your Cloud MySQL database. You can now use the provided APIs to interact with the server and the database. Make sure to explore the available routes and customize the server to meet your specific requirements.
+---
 
-Remember to follow best practices for security and error handling as you work on your project. If you encounter any issues or have questions, feel free to refer to the project documentation or reach out to our support team.
+## הערות נוספות
 
-Happy coding!
+- הנתונים מכסים את כנסת **ה-25 בלבד**.
+- להוראות התקנה והפעלת השרת ראו את הקובץ [INSTALLATIONGUIDE.md](./INSTALLATIONGUIDE.md).
+- [סרטון הדגמת שימוש באתר](https://www.youtube.com/watch?v=e-X9Kb5ARIA).
+
+</div>
